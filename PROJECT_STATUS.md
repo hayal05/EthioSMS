@@ -13,6 +13,6 @@ Implemented on `feature/task-1-foundation`:
 - Tests for configuration safety, readiness authentication, API boundaries, and static routing.
 - GitHub Actions workflow for checks, tests, and build.
 
-Validation status is recorded in the pull request and CI. Deployment and live sending are not enabled.
+Validation: clean npm ci, type checks, all 3 backend tests, production build, and production dependency audit passed locally. GitHub CI passed for implementation commit 9723e0a (runs 41224683603 and 41224682866). PR #1 is open for review; main is unchanged. Deployment and live sending are not enabled.
 
 Next: Task 2, versioned database migrations and durable state, after Task 1 CI passes.
