@@ -5,7 +5,7 @@ import { api } from './api';
 
 interface Application { id: string; name: string; enabled: boolean; account?: string }
 interface Key { id: string; prefix: string; scopes: string[]; revoked_at: string | null }
-type View = 'overview' | 'applications' | 'messages' | 'campaigns' | 'reviews' | 'settings';
+type View = 'overview' | 'applications' | 'messages' | 'campaigns' | 'reviews' | 'users' | 'settings';
 
 const permissions = ['messages:send', 'messages:read', 'otp:request', 'otp:verify', 'usage:read'];
 const limitLabels: Record<string, string> = {
@@ -29,6 +29,7 @@ const adminNavigation: { id: View; label: string; icon: string }[] = [
   { id: 'messages', label: 'Messages', icon: 'message' },
   { id: 'campaigns', label: 'Campaigns', icon: 'campaign' },
   { id: 'reviews', label: 'Campaign review', icon: 'review' },
+  { id: 'users', label: 'Users', icon: 'app' },
   { id: 'settings', label: 'Limits & settings', icon: 'settings' }
 ];
 
@@ -42,6 +43,34 @@ function NavigationIcon({ type }: { type: string }) {
     settings: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.1h-2.6v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H6v-2.6h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1L9 6.6l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5v-.1h2.6v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.1V14h-.1a1.7 1.7 0 0 0-1.1 1z'
   };
   return <svg className="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d={paths[type] || paths.app} /></svg>;
+}
+
+
+function AdminUsers() {
+  const [users, setUsers] = useState<{id:string;username:string;role:'admin'|'user';enabled?:boolean}[]>([]);
+  const [invite, setInvite] = useState('');
+  const [issued, setIssued] = useState('');
+  const [notice, setNotice] = useState('');
+  const [busy, setBusy] = useState(false);
+  async function load() { setUsers((await api('/admin/users')).users); }
+  useEffect(() => { void load().catch(error => setNotice(error.message)); }, []);
+  async function action(work: () => Promise<void>) {
+    setBusy(true); setNotice(''); setIssued('');
+    try { await work(); await load(); }
+    catch (error) { setNotice(error instanceof Error ? error.message : 'Request failed'); }
+    finally { setBusy(false); }
+  }
+  return <section className="accounts" aria-label="User management">
+    <div className="subsection-heading"><h3>Invite a user</h3><p>Create a private, time-limited setup invitation</p></div>
+    <form onSubmit={event => { event.preventDefault(); void action(async () => { const result = await api('/admin/users', 'POST', {username:invite}); setIssued(result.setupToken); setInvite(''); }); }}>
+      <label>Username<input required pattern="[a-z0-9][a-z0-9_.-]{2,79}" value={invite} onChange={event => setInvite(event.target.value)} /></label>
+      <button disabled={busy}>Create invitation</button>
+    </form>
+    {issued && <div className="token"><strong>Share privately. This setup token expires in 24 hours.</strong><code>{issued}</code><button className="secondary" onClick={() => setIssued('')}>Hide token</button></div>}
+    <div className="subsection-heading"><h3>Accounts</h3><p>Manage invited developer access</p></div>
+    <ul className="user-list">{users.map(item => <li key={item.id}><span>{item.username} · {item.enabled ? 'Enabled' : 'Disabled'}</span>{item.role === 'user' && <span className="actions"><button className="secondary" disabled={busy} onClick={() => void action(async () => { await api(`/admin/users/${item.id}`, 'PATCH', {enabled:!item.enabled}); })}>{item.enabled ? 'Disable' : 'Enable'}</button><button className="secondary" disabled={busy || !item.enabled} onClick={() => void action(async () => { const result = await api(`/admin/users/${item.id}/recovery`, 'POST'); setIssued(result.setupToken); })}>Reset access</button></span>}</li>)}</ul>
+    <p role="status">{notice}</p>
+  </section>;
 }
 
 export function Developer({ admin }: { admin: boolean }) {
@@ -176,7 +205,7 @@ export function Developer({ admin }: { admin: boolean }) {
           <CampaignReview />
         </div>}
 
-        {activeView === 'settings' && admin && <div className="workspace-section">
+        {activeView === 'users' && admin && <div className="workspace-section">\n          <div className="section-heading"><div><h2>Users</h2><p>Invite and manage developer accounts</p></div></div>\n          <AdminUsers />\n        </div>}\n\n        {activeView === 'settings' && admin && <div className="workspace-section">
           <div className="section-heading"><div><h2>Limits & settings</h2><p>Manage pilot quotas and allowed destinations</p></div></div>
           <section className="accounts">
             <form onSubmit={event => { event.preventDefault(); void act(async () => { await api('/admin/limits', 'PATCH', { ...limits, allowed_destination_prefixes: prefixes.split(',').map(value => value.trim()) }); setNotice('Limits saved.'); }); }}>
