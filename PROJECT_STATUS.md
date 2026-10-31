@@ -59,6 +59,6 @@ Implemented on `feature/task-4-api-keys`, stacked on PR #3:
 - Administrator-configurable limits and destination prefixes; Ethiopian E.164 normalization helpers.
 - Tests for tenant isolation, key lifecycle, scope rejection, concurrent rate limits and segment reservations.
 
-Local type checks, seven non-database tests, and production builds pass. PostgreSQL integration checks are required in CI. No public send endpoint, live SMS, deployment, or merge into main has been enabled.
+Local type checks, seven non-database tests, and production builds pass. PostgreSQL integration checks passed in GitHub CI (runs 41227350781 and 41227346748) for implementation commit 7f00047. No public send endpoint, live SMS, deployment, or merge into main has been enabled.
 
 Next: Task 5 — SMS submission/status API, segment estimation, and mock gateway scenarios.
