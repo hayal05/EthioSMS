@@ -47,3 +47,18 @@ Implemented on `feature/task-3-accounts`, stacked on Task 2:
 Local type checks, six non-database tests, and production builds passed. PostgreSQL-backed account tests passed in GitHub CI (runs 41226584997 and 41226580952) for implementation commit 6f766b2. Main remains unchanged; nothing is deployed and live SMS is disabled.
 
 Next: Task 4 — developer applications, API keys, and atomic quotas.
+
+## Task 4 — Applications, API keys, and quotas
+
+Implemented on `feature/task-4-api-keys`, stacked on PR #3:
+
+- Tenant-scoped application/key management, administrator approval, and a developer panel.
+- Scoped bearer keys shown once, stored as hashes, with atomic rotation/revocation and active-key caps.
+- Authenticated bearer usage endpoint with persistent key/application/account/global rate limits.
+- Atomic daily segment reservation alongside durable message jobs, using Addis Ababa day boundaries.
+- Administrator-configurable limits and destination prefixes; Ethiopian E.164 normalization helpers.
+- Tests for tenant isolation, key lifecycle, scope rejection, concurrent rate limits and segment reservations.
+
+Local type checks, seven non-database tests, and production builds pass. PostgreSQL integration checks passed in GitHub CI (runs 41227350781 and 41227346748) for implementation commit 7f00047. No public send endpoint, live SMS, deployment, or merge into main has been enabled.
+
+Next: Task 5 — SMS submission/status API, segment estimation, and mock gateway scenarios.

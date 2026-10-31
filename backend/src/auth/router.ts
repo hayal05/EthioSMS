@@ -4,6 +4,7 @@ import type pg from 'pg';
 import { transaction } from '../db/pool.js';
 import { digest, token, validUsername, validPassword, hashPassword, verifyPassword } from './security.js';
 import { createAccount } from './accounts.js';
+import { developerRouter } from '../developer/router.js';
 
 interface User { id:string; tenant_id:string; username:string; role:'admin'|'user' }
 const cookieName='ethiosms_session';
@@ -129,6 +130,7 @@ export function accountRouter(pool:pg.Pool, production:boolean) {
     });
     res.status(changed?200:404).json(changed?{status:'updated'}:{error:'Application not found'});
   });
+  router.use(developerRouter(pool,authenticate,admin));
   router.use((error:unknown,_req:Request,res:Response,_next:NextFunction)=>{
     const status=(error as {status?:number})?.status;
     res.status(status===400||status===413?status:503).json({error:status===400?'Invalid JSON':status===413?'Request too large':'Account service unavailable'});

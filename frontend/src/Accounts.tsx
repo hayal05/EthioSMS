@@ -1,10 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { api } from './api';
+import { Developer } from './Developer';
 interface User { id:string;username:string;role:'admin'|'user';enabled?:boolean }
-async function api(path:string, method='GET', data?:unknown) {
-  const response=await fetch(`/api${path}`,{method,headers:method==='GET'?{}:{'Content-Type':'application/json','X-EthioSMS-Request':'1'},body:data===undefined?undefined:JSON.stringify(data)});
-  const result=response.status===204?{}:await response.json();
-  if(!response.ok)throw new Error(result.error??'Request failed');return result;
-}
 export function Accounts() {
   const [user,setUser]=useState<User|null>(null),[mode,setMode]=useState<'login'|'setup'>('login');
   const [username,setUsername]=useState(''),[password,setPassword]=useState(''),[setupToken,setSetupToken]=useState('');
@@ -19,7 +16,7 @@ export function Accounts() {
     }catch(error){setNotice(error instanceof Error?error.message:'Request failed');}finally{setPassword('');setBusy(false);}
   }
   async function adminAction(action:()=>Promise<void>){setBusy(true);setNotice('');setIssued('');try{await action();const result=await api('/admin/users');setUsers(result.users);}catch(error){setNotice(error instanceof Error?error.message:'Request failed');}finally{setBusy(false);}}
-  return <section className="accounts" aria-label="Pilot accounts"><h2>{user?`Welcome, ${user.username}`:mode==='setup'?'Set your password':'Pilot sign in'}</h2>
+  return <><section className="accounts" aria-label="Pilot accounts"><h2>{user?`Welcome, ${user.username}`:mode==='setup'?'Set your password':'Pilot sign in'}</h2>
     {!user?<><form onSubmit={submit}>
       {mode==='login'?<label>Username<input autoComplete="username" required value={username} onChange={e=>setUsername(e.target.value)}/></label>:<label>One-time setup token<input autoComplete="off" required value={setupToken} onChange={e=>setSetupToken(e.target.value)}/></label>}
       <label>Password<input type="password" autoComplete={mode==='login'?'current-password':'new-password'} minLength={mode==='setup'?12:undefined} maxLength={128} required value={password} onChange={e=>setPassword(e.target.value)}/></label>
@@ -31,5 +28,5 @@ export function Accounts() {
     <ul className="user-list">{users.map(item=><li key={item.id}><span>{item.username} · {item.enabled?'Enabled':'Disabled'}</span>{item.role==='user'&&<span className="actions"><button className="secondary" disabled={busy} onClick={()=>void adminAction(async()=>{await api(`/admin/users/${item.id}`,'PATCH',{enabled:!item.enabled});})}>{item.enabled?'Disable':'Enable'}</button><button className="secondary" disabled={busy||!item.enabled} onClick={()=>void adminAction(async()=>{const result=await api(`/admin/users/${item.id}/recovery`,'POST');setIssued(result.setupToken);})}>Reset access</button></span>}</li>)}</ul></>}
     </>}
     <p role="status">{notice}</p>
-  </section>;
+  </section>{user&&<Developer key={user.id} admin={user.role==='admin'}/>}</>;
 }

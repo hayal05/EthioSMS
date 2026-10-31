@@ -131,3 +131,35 @@ All mutation requests require the custom header. Browser requests include it aut
 ### Administrator recovery
 
 If the administrator loses access, the trusted operator with private database access can run `npm run admin:recover -- your_admin_username`. This resets only the named administrator, revokes sessions, invalidates the old password and setup tokens, enables the account, and prints a new 24-hour setup token. Keep output private. Ordinary-user recovery uses the administrator panel instead. Expired sessions, tokens, and rate-limit buckets are retained until cleanup in Task 12; monitor database storage during the pilot.
+
+## Applications, API keys, and quotas (Task 4)
+
+Apply migration `003_developer_access.sql` with `npm run db:migrate`. Signed-in users can create named applications, issue scoped API keys, rotate keys, and revoke them in the developer panel. New applications start disabled until an administrator approves them; owners can disable an application but only an administrator can re-enable it. Pilot caps are 20 applications per account and five active keys per application. Application names are unique within an account, ignoring case.
+
+Keys are random bearer secrets beginning with `esms_`. The full key appears only in the issue/rotation response and the current browser panel; it is not saved in browser storage or returned by list endpoints. Store it privately in the integrating application's **server** environment. Only SHA-256 hashes and short prefixes are saved in the database. Rotation atomically revokes the old key and returns a replacement with the same permissions; there is no overlap period. Disabling the account/application or revoking a key blocks subsequent key authentication.
+
+Available permissions: `messages:send`, `messages:read`, `otp:request`, `otp:verify`, and `usage:read`. Message and OTP endpoints arrive in Tasks 5 and 8. The first developer API endpoint is:
+
+```sh
+curl https://YOUR-ETHIOSMS-HOST/api/v1/usage \
+  -H 'Authorization: Bearer YOUR_PRIVATE_API_KEY'
+```
+
+It requires `usage:read` and reports only that application's and account's reserved/used/remaining segment counts for the Addis Ababa calendar day. It does not expose other customers' usage or imply that the global pool has capacity. API-key routes use bearer authentication; the custom browser mutation header applies to session-authenticated management routes.
+
+| Session-authenticated path | Methods | Purpose |
+|---|---|---|
+| `/api/applications` | GET, POST | List own apps; create using JSON `name` |
+| `/api/applications/:id` | PATCH | Rename or disable own app |
+| `/api/applications/:id/keys` | GET, POST | Safe key metadata; issue with JSON `scopes` |
+| `/api/applications/:id/keys/:keyId/rotate` | POST | Revoke old key and issue replacement |
+| `/api/applications/:id/keys/:keyId` | DELETE | Revoke own key, idempotently |
+| `/api/applications/:id/usage` | GET | Own application's usage |
+| `/api/admin/applications` | GET | Admin application approval list |
+| `/api/admin/limits` | GET, PATCH | Admin pilot limits and allowed destination prefixes |
+
+Default segment quotas are **200 globally, 50 per account, and 50 per application per day**. Each invited user has one account, so the account quota is the pilot's user quota. Default request limits per minute are **120 globally, 60 per account, 30 per application, and 20 per key**. Rate counters are database-backed fixed windows, persist denied attempts, and apply to the currently available bearer usage endpoint; the same guard will be used by later SMS/OTP routes. Fixed windows can allow a burst across a window boundary. All seven limits and permitted destination prefixes can be updated together in the admin panel/API; daily quotas accept zero to block new reservations. Lowering a quota does not cancel already-reserved jobs.
+
+Internal `reserveMessage` persists a new job, its recipients, and all three quota reservations within one PostgreSQL transaction. Concurrent requests cannot overspend a scope; rejected requests leave no new job or partial counter increment. Matching idempotency replays do not reserve twice. There is deliberately **no public reserve/send endpoint yet**. Task 5 will calculate segment counts from actual message text, canonicalize the request hash, encrypt payloads, and call this guarded persistence path. The low-level persistence helper is not a public submission API. Reserved usage is retained until dispatch/failure/cancellation accounting is implemented in Task 6; it is not a claim of delivery or a financial charge.
+
+Phone utilities normalize Ethiopian mobile inputs such as `0912345678`, `912345678`, `251912345678`, and `00251912345678` to E.164. Ethiopian pilot destinations must use a 7/9 mobile prefix. International E.164 syntax is accepted only if its prefix is allowed; by default only `+251` is allowed. This validates syntax and policy, not SIM ownership, carrier permission, or deliverability. Customer-facing phone submission arrives with Task 5.
