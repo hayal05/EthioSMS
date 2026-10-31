@@ -1,0 +1,22 @@
+{
+  "name": "ethiosms",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev -w backend",
+    "dev:web": "npm run dev -w frontend",
+    "typecheck": "npm run typecheck --workspaces",
+    "test": "npm run test -w backend",
+    "build": "npm run build --workspaces",
+    "start": "npm run start -w backend",
+    "check": "npm run typecheck && npm test && npm run build"
+  }
+}

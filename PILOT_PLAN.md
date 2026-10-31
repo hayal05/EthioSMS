@@ -135,7 +135,7 @@ Implement tasks sequentially, keep changes reviewable, and update this checklist
 
 ## Progress
 
-- [ ] Task 1: Foundation
+- [x] Task 1: Foundation — implemented and CI verified (PR #1)
 - [ ] Task 2: Database
 - [ ] Task 3: Invited users
 - [ ] Task 4: API keys and quotas

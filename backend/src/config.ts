@@ -1,0 +1,20 @@
+export interface Config {
+  nodeEnv: 'development' | 'test' | 'production';
+  port: number;
+  readinessToken?: string;
+  gateway: 'mock';
+  smsEnabled: false;
+}
+
+export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
+  const nodeEnv = env.NODE_ENV ?? 'development';
+  if (!['development', 'test', 'production'].includes(nodeEnv)) throw new Error('Invalid NODE_ENV');
+  const port = env.PORT ?? '3000';
+  if (!/^\d+$/.test(port) || Number(port) < 1 || Number(port) > 65535) throw new Error('Invalid PORT');
+  if ((env.SMS_GATEWAY ?? 'mock') !== 'mock') throw new Error('Only mock gateway is available');
+  if ((env.SMS_ENABLED ?? 'false') !== 'false') throw new Error('Live SMS is unavailable in this release');
+  const token = env.READINESS_TOKEN;
+  if (token && (token.length < 32 || token.trim() !== token || /\s/.test(token))) throw new Error('READINESS_TOKEN must be at least 32 characters without whitespace');
+  if (nodeEnv === 'production' && !token) throw new Error('READINESS_TOKEN is required in production');
+  return { nodeEnv: nodeEnv as Config['nodeEnv'], port: Number(port), readinessToken: token || undefined, gateway: 'mock', smsEnabled: false };
+}
