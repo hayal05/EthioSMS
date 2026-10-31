@@ -4,7 +4,7 @@ SMS gateway platform for ERP systems, websites, and locally developed applicatio
 
 ## Status
 
-Task 1 foundation implemented: TypeScript Express backend, React/Vite dashboard shell, validated configuration, protected readiness, and CI. Database integration, accounts, and messaging are pending. No live SMS sending is enabled.
+Task 1 foundation implemented: TypeScript Express backend, React/Vite dashboard shell, validated configuration, protected readiness, and CI. Database migrations and internal message persistence are now implemented in Task 2. Accounts and messaging endpoints are pending. No live SMS sending is enabled.
 
 ## Planned features
 
@@ -67,9 +67,32 @@ Open http://localhost:3000. For development, run `npm run dev:api` and `npm run 
 ### Health and configuration
 
 - `GET /health`: public liveness, with no database or phone access. Use this for uptime checks.
-- `GET /api/ready`: requires `Authorization: Bearer <READINESS_TOKEN>`. Configure a private random token of at least 32 characters; it is mandatory with `NODE_ENV=production`. This endpoint describes foundation readiness only, not database or phone readiness.
+- `GET /api/ready`: requires `Authorization: Bearer <READINESS_TOKEN>`. Configure a private random token of at least 32 characters; it is mandatory with `NODE_ENV=production`. This endpoint checks database migration readiness when configured; it does not imply phone readiness.
 - `SMS_GATEWAY=mock` and `SMS_ENABLED=false` are the only supported values. Enabling real sending fails startup in this release. No send endpoint is exposed yet.
 - `.env` is read by backend start/development scripts; production environment variables can also be supplied by the hosting provider. Never put readiness or gateway credentials in frontend `VITE_*` variables.
 - `npm run check` runs TypeScript checks, backend integration tests, and production builds. CI runs the same command after `npm ci`.
 
-The dashboard is a public foundation status page, not an authenticated customer dashboard. It displays no account, message, or recipient data. The built dashboard and API share one server process. Database, sending, authentication, and deployment arrive in later tasks from [PILOT_PLAN.md](PILOT_PLAN.md).
+The dashboard is a public foundation status page, not an authenticated customer dashboard. It displays no account, message, or recipient data. The built dashboard and API share one server process. Database setup is documented below; sending, authentication, and deployment arrive in later tasks from [PILOT_PLAN.md](PILOT_PLAN.md).
+
+## Database foundation (Task 2)
+
+Set `DATABASE_URL` privately in the repository-root `.env` or hosting environment, using the Neon pooled URL (`-pooler` hostname) with `sslmode=verify-full`. A remote URL with `sslmode=require` is upgraded to certificate-verifying TLS. The server uses a small connection pool and releases idle connections; `/health` never queries it. No production database has been configured by this change.
+
+```sh
+npm ci
+npm run db:migrate
+npm run build
+npm start
+```
+
+Migrations run explicitly, not automatically on startup. They apply in one transaction with a transaction-scoped advisory lock. The migration ledger detects edited, removed, or reordered applied files. Add a new numbered SQL migration instead of changing an applied migration. Back up before schema changes; use forward corrective migrations rather than dropping populated tables.
+
+Protected `/api/ready` now returns 200 only when the configured database has the expected migration history; missing/unavailable/unmigrated databases return 503. Phone readiness is not implied. Liveness remains available without a database. The built migration command is also available as `node --env-file-if-exists=../.env dist/db/migrate.js` from `backend/` after building.
+
+The `ethiosms` schema stores tenant accounts, users, applications, hashed API keys, encrypted message payload slots, recipient jobs/leases, attempts, OTP digests, usage counters/reservations, audit events, and retention settings. Foreign keys include tenant ownership. Internal message persistence is not an exposed sending API: authentication, encryption, quotas, and dispatch must be implemented before use by customers. Settings start with sending paused. Retention settings are stored now; automated cleanup arrives in Task 12. Timestamps use `timestamptz` (absolute instants); the dashboard will display Africa/Addis_Ababa time when dated records are introduced.
+
+### Database verification
+
+CI provisions a disposable PostgreSQL 17 database and requires the database tests. For local database tests, explicitly set `TEST_DATABASE_URL` to a disposable localhost PostgreSQL database whose name ends in `_test`, and set `REQUIRE_DATABASE_TESTS=true`, then run `npm run check`. These tests **drop the EthioSMS test schema and migration ledger**. Never point them at an application database. Without this test URL, only the database integration suite is skipped locally.
+
+Tests cover concurrent migration runners, repeat migrations, checksums, transactional rollback, tenant/application boundaries, duplicate requests, invalid recipient rollback, and recovery after closing/reopening all application connections. Database server restart recovery is part of later deployment validation.

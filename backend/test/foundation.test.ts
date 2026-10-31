@@ -22,7 +22,7 @@ test('liveness works without dependencies; readiness requires exact secret', asy
   for (const auth of ['', 'Bearer wrong', `Bearer ${token}extra`]) {
     await request(app).get('/api/ready').set('Authorization', auth).expect(401);
   }
-  const ready = await request(app).get('/api/ready').set('Authorization', `Bearer ${token}`).expect(200);
+  const ready = await request(app).get('/api/ready').set('Authorization', `Bearer ${token}`).expect(503);
   assert.equal(ready.body.smsEnabled, false);
   assert.equal(ready.headers['cache-control'], 'no-store');
   assert.ok(!JSON.stringify(ready.body).includes(token));
@@ -40,4 +40,25 @@ test('API cannot send SMS and missing routes do not return dashboard HTML', asyn
     await request(app).get('/missing.js').expect(404);
     await request(app).get('/.env').expect(404);
   } finally { rmSync(root, { recursive:true, force:true }); }
+});
+
+test('readiness checks database only after authentication, and redacts failures', async () => {
+  let calls = 0;
+  const config = loadConfig({ READINESS_TOKEN:token, DATABASE_URL:'postgresql://test@localhost/pilot' });
+  const app = createApp(config, '/nonexistent', async () => { calls++; throw new Error('private connection details'); });
+  await request(app).get('/health').expect(200);
+  await request(app).get('/api/ready').expect(401);
+  assert.equal(calls, 0);
+  const result = await request(app).get('/api/ready').set('Authorization', `Bearer ${token}`).expect(503);
+  assert.equal(calls, 1);
+  assert.equal(result.body.database, 'unavailable');
+  assert.ok(!JSON.stringify(result.body).includes('private'));
+  await request(createApp(config, '/nonexistent', async () => true)).get('/api/ready').set('Authorization', `Bearer ${token}`).expect(200);
+});
+test('remote database TLS cannot be disabled and invalid URLs do not leak credentials', () => {
+  for (const value of ['not-a-url', 'https://host/db', 'postgres://secret@host/db?sslmode=disable']) {
+    assert.throws(() => loadConfig({DATABASE_URL:value}), /Invalid DATABASE_URL/);
+  }
+  const config = loadConfig({DATABASE_URL:'postgresql://user:secret@example.com/pilot?sslmode=require'});
+  assert.equal(new URL(config.databaseUrl!).searchParams.get('sslmode'), 'verify-full');
 });

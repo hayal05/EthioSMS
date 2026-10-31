@@ -6,13 +6,13 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Config } from './config.js';
 
-export function createApp(config: Config, webRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../frontend/dist')) {
+export function createApp(config: Config, webRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../frontend/dist'), readiness?: () => Promise<boolean>) {
   const app = express();
   app.disable('x-powered-by');
   app.use(helmet());
   // Liveness intentionally never touches a database, gateway, or secret.
   app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'EthioSMS' }));
-  app.get('/api/ready', (req, res) => {
+  app.get('/api/ready', async (req, res) => {
     res.set('Cache-Control', 'no-store');
     const expected = config.readinessToken;
     const digest = (value: string) => createHash('sha256').update(value).digest();
@@ -20,8 +20,13 @@ export function createApp(config: Config, webRoot = resolve(dirname(fileURLToPat
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
-    // Readiness applies only to this foundation; database and phone are not connected.
-    res.json({ status: 'ready', stage: 'foundation', gateway: config.gateway, smsEnabled: config.smsEnabled, database: 'not_configured' });
+    let database = 'not_configured';
+    if (config.databaseUrl) {
+      try { database = readiness && await readiness() ? 'ready' : 'unavailable'; }
+      catch { database = 'unavailable'; }
+    }
+    const ready = database === 'ready';
+    res.status(ready ? 200 : 503).json({ status: ready ? 'ready' : 'not_ready', stage: 'database', gateway: config.gateway, smsEnabled: config.smsEnabled, database });
   });
   app.use('/api', (_req, res) => { res.status(404).json({ error: 'Endpoint not available' }); });
   if (existsSync(resolve(webRoot, 'index.html'))) {
