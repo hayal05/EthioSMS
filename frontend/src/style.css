@@ -9,3 +9,5 @@
 .token,.user-list li>span{overflow-wrap:anywhere;min-width:0}
 
 .actions{flex-wrap:wrap}.accounts fieldset{min-inline-size:0}
+
+.setup-notice{padding:18px;border:1px solid #e6d9b8;background:#fff9e9;border-radius:12px;color:#5e4a25;font-size:14px;line-height:1.6}.setup-notice p{margin:8px 0 0}.form-hint{flex-basis:100%;margin:0;color:#68776c;font-size:12px!important;line-height:1.6}.accounts .wide{flex-basis:100%}
