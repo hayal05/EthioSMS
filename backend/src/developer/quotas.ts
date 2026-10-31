@@ -1,4 +1,5 @@
 import type pg from 'pg';
+import type { PoolClient } from 'pg';
 import { randomUUID } from 'node:crypto';
 import { transaction } from '../db/pool.js';
 import { storeMessageInTransaction, type StoredMessageInput } from '../db/messages.js';
@@ -6,7 +7,9 @@ import { AccessError,globalScopeId,normalizePhone,checkDestination } from './com
 
 // This internal entry point is for the forthcoming message API. No public reserve/send endpoint exists yet.
 export async function reserveMessage(pool:pg.Pool,input:StoredMessageInput) {
-  return transaction(pool,async client=>{
+  return transaction(pool,client=>reserveMessageInTransaction(client,input));
+}
+export async function reserveMessageInTransaction(client:PoolClient,input:StoredMessageInput){
     const settings=(await client.query('SELECT * FROM ethiosms.settings WHERE singleton FOR SHARE')).rows[0];
     const active=await client.query(`SELECT a.id FROM ethiosms.applications a JOIN ethiosms.tenants t ON t.id=a.tenant_id
       JOIN ethiosms.users u ON u.tenant_id=t.id WHERE a.tenant_id=$1 AND a.id=$2 AND a.enabled AND t.enabled AND u.enabled FOR SHARE OF a,t,u`,[input.tenantId,input.applicationId]);
@@ -34,7 +37,6 @@ export async function reserveMessage(pool:pg.Pool,input:StoredMessageInput) {
     }
     await client.query('INSERT INTO ethiosms.usage_reservations(id,tenant_id,job_id,usage_date,segments) VALUES ($1,$2,$3,$4,$5)',[randomUUID(),input.tenantId,message.id,day,segments]);
     return message.id;
-  });
 }
 export async function usage(pool:pg.Pool,tenantId:string,applicationId:string) {
   const result=await pool.query(`WITH today AS (SELECT (now() AT TIME ZONE 'Africa/Addis_Ababa')::date AS day)

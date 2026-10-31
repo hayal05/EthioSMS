@@ -212,3 +212,8 @@ Claims use database leases and SKIP LOCKED. Unknown timeouts/lost claims are nev
 
 ## Android integration (Task 7)
 See [phone setup and controlled live test](docs/ANDROID_GATEWAY.md). Mock remains the default; live transport requires explicit configuration and approval flags. Code and HTTP simulations do not certify physical delivery.
+
+## OTP (Task 8)
+Configure independent random `OTP_SECRET` and `PAYLOAD_ENCRYPTION_KEY` secrets. POST `/api/v1/otp/request` with `otp:request` scope, an Idempotency-Key and JSON `to`, `purpose`. Receive `challengeId`, `expiresAt` and mode, never the code. POST `/api/v1/otp/verify` with `otp:verify` scope and JSON `challengeId`, `purpose`, `code` (six-character numeric string); receive boolean `verified`. Challenges are single use, bound to application and purpose. A newer request supersedes the previous one.
+
+Defaults: 300-second expiry, 60-second resend cooldown, five verification attempts, at most five requests per recipient/application per 15 minutes and 100 OTP operations/IP per 15 minutes, plus API key limits. Environment overrides have bounded ranges. Matching idempotent retries return the existing challenge and do not resend or extend expiry. Successful/exhausted queued challenges are cancelled and encrypted code payloads removed; used/expired challenge records are purged by retention maintenance. OTP queue priority is above normal messages. A code already handed to the transport cannot be retracted, but superseded/consumed challenges cannot verify. Keep both secrets private and preserve them while challenges/jobs exist.
