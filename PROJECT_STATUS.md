@@ -62,3 +62,18 @@ Implemented on `feature/task-4-api-keys`, stacked on PR #3:
 Local type checks, seven non-database tests, and production builds pass. PostgreSQL integration checks passed in GitHub CI (runs 41227350781 and 41227346748) for implementation commit 7f00047. No public send endpoint, live SMS, deployment, or merge into main has been enabled.
 
 Next: Task 5 — SMS submission/status API, segment estimation, and mock gateway scenarios.
+
+## Task 5 — Mock SMS submission/status API
+
+Implemented on `feature/task-5-message-api`, stacked on PR #4:
+
+- Scoped POST submission and GET detail/history APIs with bounded cursor pagination.
+- Server-side phone/expiry/size validation, GSM-7/Unicode segment estimates, and canonical idempotency fingerprints.
+- AES-256-GCM message encryption and keyed request fingerprints; masked content-free responses.
+- Atomic calculated-segment reservation integrated with durable submissions.
+- Pure mock adapter covering acceptance, rejection, timeout, offline, and delayed outcomes.
+- Unit and PostgreSQL API tests for privacy, retries, scopes, history, errors, and quota contention.
+
+No dispatch or live telephony is enabled. Submissions remain queued in mock mode. Dispatch, expiry handling, and usage settlement follow in Task 6.
+
+Next: Task 6 — reliable dispatch and recovery.

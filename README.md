@@ -4,7 +4,7 @@ SMS gateway platform for ERP systems, websites, and locally developed applicatio
 
 ## Status
 
-Task 1 foundation implemented: TypeScript Express backend, React/Vite dashboard shell, validated configuration, protected readiness, and CI. Database migrations and internal message persistence are now implemented in Task 2. Invite-only accounts are implemented in Task 3. Messaging endpoints are pending. No live SMS sending is enabled.
+Task 1 foundation implemented: TypeScript Express backend, React/Vite dashboard shell, validated configuration, protected readiness, and CI. Database migrations and internal message persistence are now implemented in Task 2. Invite-only accounts are implemented in Task 3. Developer keys and quotas are implemented in Task 4, and encrypted mock message APIs in Task 5. No live SMS sending is enabled.
 
 ## Planned features
 
@@ -138,7 +138,7 @@ Apply migration `003_developer_access.sql` with `npm run db:migrate`. Signed-in 
 
 Keys are random bearer secrets beginning with `esms_`. The full key appears only in the issue/rotation response and the current browser panel; it is not saved in browser storage or returned by list endpoints. Store it privately in the integrating application's **server** environment. Only SHA-256 hashes and short prefixes are saved in the database. Rotation atomically revokes the old key and returns a replacement with the same permissions; there is no overlap period. Disabling the account/application or revoking a key blocks subsequent key authentication.
 
-Available permissions: `messages:send`, `messages:read`, `otp:request`, `otp:verify`, and `usage:read`. Message and OTP endpoints arrive in Tasks 5 and 8. The first developer API endpoint is:
+Available permissions: `messages:send`, `messages:read`, `otp:request`, `otp:verify`, and `usage:read`. Mock message endpoints are documented in Task 5 below; OTP endpoints arrive in Task 8. The first developer API endpoint is:
 
 ```sh
 curl https://YOUR-ETHIOSMS-HOST/api/v1/usage \
@@ -160,6 +160,47 @@ It requires `usage:read` and reports only that application's and account's reser
 
 Default segment quotas are **200 globally, 50 per account, and 50 per application per day**. Each invited user has one account, so the account quota is the pilot's user quota. Default request limits per minute are **120 globally, 60 per account, 30 per application, and 20 per key**. Rate counters are database-backed fixed windows, persist denied attempts, and apply to the currently available bearer usage endpoint; the same guard will be used by later SMS/OTP routes. Fixed windows can allow a burst across a window boundary. All seven limits and permitted destination prefixes can be updated together in the admin panel/API; daily quotas accept zero to block new reservations. Lowering a quota does not cancel already-reserved jobs.
 
-Internal `reserveMessage` persists a new job, its recipients, and all three quota reservations within one PostgreSQL transaction. Concurrent requests cannot overspend a scope; rejected requests leave no new job or partial counter increment. Matching idempotency replays do not reserve twice. There is deliberately **no public reserve/send endpoint yet**. Task 5 will calculate segment counts from actual message text, canonicalize the request hash, encrypt payloads, and call this guarded persistence path. The low-level persistence helper is not a public submission API. Reserved usage is retained until dispatch/failure/cancellation accounting is implemented in Task 6; it is not a claim of delivery or a financial charge.
+Internal `reserveMessage` persists a new job, its recipients, and all three quota reservations within one PostgreSQL transaction. Concurrent requests cannot overspend a scope; rejected requests leave no new job or partial counter increment. Matching idempotency replays do not reserve twice. Task 5 exposes the guarded path through the mock submission API, calculating segment counts from actual text, canonicalizing the request fingerprint, and encrypting payloads. There is no separate public quota-reservation endpoint. The low-level persistence helper is not a public submission API. Reserved usage is retained until dispatch/failure/cancellation accounting is implemented in Task 6; it is not a claim of delivery or a financial charge.
 
 Phone utilities normalize Ethiopian mobile inputs such as `0912345678`, `912345678`, `251912345678`, and `00251912345678` to E.164. Ethiopian pilot destinations must use a 7/9 mobile prefix. International E.164 syntax is accepted only if its prefix is allowed; by default only `+251` is allowed. This validates syntax and policy, not SIM ownership, carrier permission, or deliverability. Customer-facing phone submission arrives with Task 5.
+
+## Mock SMS API (Task 5)
+
+Apply the next migration with `npm run db:migrate`. Set `PAYLOAD_ENCRYPTION_KEY` privately to a randomly generated 32-byte key encoded as 64 lowercase hexadecimal characters. The `.env.example` shows a generation command. Missing encryption configuration blocks submissions with 503 while other account features remain available. Preserve the key securely while encrypted jobs exist; replacing or losing it prevents decryption. Key rotation/multi-key decryption is not implemented yet.
+
+```sh
+curl -X POST https://YOUR-ETHIOSMS-HOST/api/v1/messages \
+  -H 'Authorization: Bearer YOUR_PRIVATE_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: erp-leave-event-123' \
+  -d '{"to":"+251912345678","message":"Your leave request was approved.","expiresInSeconds":3600}'
+```
+
+This requires `messages:send`. A successful response is **202 Accepted**, a stable message ID, a Location header, `mode: "mock"`, the stored queue status, calculated segment count, and a masked destination. It does **not** mean an SMS was sent or delivered. Submissions are durably queued; dispatch is Task 6 and phone sending is Task 7. `SMS_ENABLED=false` remains mandatory. Only one recipient string is accepted per request; campaign/bulk submission with approval is deferred to Task 10.
+
+Accepted JSON fields:
+
+| Field | Rule |
+|---|---|
+| `to` | One mobile number; normalized and checked against permitted prefixes |
+| `message` | Nonblank text; at most 1600 UTF-16 units and 10 calculated segments |
+| `expiresInSeconds` | Integer 30–86400; default 3600 |
+| `mockScenario` | Optional `success`, `rejected`, `timeout`, `offline`, or `delayed`; default `success` |
+
+Unknown fields are rejected; callers cannot set tenant, application, kind, segment count, delivery status, or gateway mode. OTP creation/verification uses its own forthcoming Task 8 endpoints.
+
+`Idempotency-Key` is required (1–128 ASCII letters, digits, dots, underscores, colons or hyphens). Reusing it within the same application for the same normalized destination/text/expiry duration/scenario returns the original job and original expiry, with no new quota reservation. A conflicting body returns 409. Supply a new key for a new business event. Replays do not extend expiry. Requests are still subject to current permissions, destination policy, and rate limits.
+
+Message text and the chosen mock scenario are encrypted using AES-256-GCM with an application/tenant/request context. The canonical request fingerprint is a keyed HMAC to avoid storing a plain text fingerprint. Stored recipients remain available to dispatch in PostgreSQL, but public responses mask numbers and never return message text, ciphertext, or request fingerprints.
+
+### Status and history
+
+- `GET /api/v1/messages/:id` requires `messages:read` and returns only a job belonging to that key's tenant **and application**, with recipient statuses and segment totals.
+- `GET /api/v1/messages?limit=20&cursor=...` requires `messages:read`; limit is 1–100. Use the returned opaque `nextCursor` until null. Cursor pagination preserves database timestamp precision. History includes status, segment totals, mock mode, creation time, and expiry without message content.
+- `GET /api/v1/usage` still requires `usage:read` and reports reserved usage separately from used usage.
+
+Errors: 400 invalid input/JSON, 401 invalid/revoked/disabled key, 403 missing permission, 404 inaccessible or missing job, 409 conflicting idempotency key, 413 oversized body, 415 unsupported content type, 429 request/segment limit, and 503 unavailable storage/configuration. Errors do not echo message bodies, keys, or database details.
+
+Segment estimation uses GSM-7's 160/153-septet single/multipart limits and Unicode's 70/67 UTF-16-unit limits. GSM extension characters count twice; multipart boundaries preserve extension pairs and surrogate pairs. Amharic uses Unicode encoding. Estimates still require validation against the eventual phone/operator implementation, especially for complex Unicode grapheme sequences.
+
+The pure mock adapter can simulate acceptance, definite rejection, an ambiguous timeout, an offline retryable result, and a delayed delivery result after 30 seconds. Submission stores the scenario encrypted but does not execute the adapter yet. Simulated outcomes will remain explicitly marked as mock; they must never be presented as real delivery confirmations. A queued job whose expiry passes will be expired by the Task 6 dispatcher; until then its stored status remains queued and its expiry is visible.
