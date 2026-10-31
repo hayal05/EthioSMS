@@ -94,3 +94,6 @@ Session-authenticated message form, paginated history, masked detail, server-cal
 
 ## Task 10 — Small consent-based campaigns
 Single-column CSV/paste parsing, normalized deduplication, 20-recipient cap, masked segment previews, consent/opt-out records, administrator content review and approval, suppression rechecks, unsent cancellation/rejection and partial usage settlement implemented. Bulk work cannot dispatch before approval. Inbound automatic STOP processing is not enabled; manual opt-outs are recorded through the suppression control.
+
+## Task 11 — Developer integration
+Public API guide, OpenAPI reference, server-side JavaScript client, and leave-decision outbox example implemented with stable retry identities and mocked tests. Imports never send automatically. Existing ERP repositories remain untouched.
