@@ -46,8 +46,8 @@ export function accountRouter(pool:pg.Pool, production:boolean,dispatcher?:Dispa
     return result.rows[0]!.hits<=limit;
   }
   router.get('/auth/setup/status',async(_req,res)=>{
-    const result=await pool.query<{exists:boolean}>("SELECT EXISTS(SELECT 1 FROM ethiosms.users WHERE role='admin') AS exists");
-    const setupRequired=!result.rows[0]?.exists;
+    const result=await pool.query<{has_admin:boolean}>("SELECT EXISTS(SELECT 1 FROM ethiosms.users WHERE role='admin') AS has_admin");
+    const setupRequired=!result.rows[0]?.has_admin;
     res.json({setupRequired,setupAvailable:setupRequired&&!!config?.adminSetupKey});
   });
   router.post('/auth/setup/initial',async(req,res)=>{
