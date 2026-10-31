@@ -1,8 +1,8 @@
 import express, { type Request, type Response, type NextFunction } from 'express';
-import { randomUUID, timingSafeEqual } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import type pg from 'pg';
 import { transaction } from '../db/pool.js';
-import { digest, token, validUsername, validPassword, hashPassword, verifyPassword } from './security.js';
+import { digest, token, validUsername, validEmail, validPassword, hashPassword, verifyPassword } from './security.js';
 import { maintain } from '../db/maintenance.js';
 import { createAccount, createInitialAdmin } from './accounts.js';
 import type { Dispatcher } from '../messaging/dispatch.js';
@@ -11,7 +11,7 @@ import { dashboardRouter } from '../developer/dashboard.js';
 import type { Config } from '../config.js';
 import { developerRouter } from '../developer/router.js';
 
-interface User { id:string; tenant_id:string; username:string; role:'admin'|'user' }
+interface User { id:string; tenant_id:string; username:string; email:string|null; role:'admin'|'user' }
 const cookieName='ethiosms_session';
 function sessionToken(req:Request) {
   const parts=(req.get('cookie')??'').split(';').map(part=>part.trim()).filter(part=>part.startsWith(`${cookieName}=`));
@@ -32,7 +32,7 @@ export function accountRouter(pool:pg.Pool, production:boolean,dispatcher?:Dispa
   const authenticate=async(req:Request,res:Response,next:NextFunction)=>{
     const raw=sessionToken(req);
     if (!raw) {res.status(401).json({error:'Authentication required'});return;}
-    const result=await pool.query<User>(`SELECT u.id,u.tenant_id,u.username,u.role FROM ethiosms.sessions s
+    const result=await pool.query<User>(`SELECT u.id,u.tenant_id,u.username,u.email,u.role FROM ethiosms.sessions s
       JOIN ethiosms.users u ON u.id=s.user_id AND u.tenant_id=s.tenant_id JOIN ethiosms.tenants t ON t.id=u.tenant_id
       WHERE s.token_hash=$1 AND s.expires_at>now() AND u.enabled AND t.enabled`,[digest(raw)]);
     if (!result.rows[0]) {res.status(401).json({error:'Authentication required'});return;}
@@ -46,36 +46,35 @@ export function accountRouter(pool:pg.Pool, production:boolean,dispatcher?:Dispa
     return result.rows[0]!.hits<=limit;
   }
   router.get('/auth/setup/status',async(_req,res)=>{
-    const result=await pool.query<{has_admin:boolean}>("SELECT EXISTS(SELECT 1 FROM ethiosms.users WHERE role='admin') AS has_admin");
-    const setupRequired=!result.rows[0]?.has_admin;
-    res.json({setupRequired,setupAvailable:setupRequired&&!!config?.adminSetupKey});
+    const result=await pool.query<{has_users:boolean}>('SELECT EXISTS(SELECT 1 FROM ethiosms.users) AS has_users');
+    const available=!result.rows[0]?.has_users;
+    res.json({setupRequired:available,setupAvailable:available});
   });
   router.post('/auth/setup/initial',async(req,res)=>{
-    if (!await allowed(`initial-setup-ip:${req.ip}`,5)) {res.status(429).json({error:'Too many attempts; try later'});return;}
-    const configured=config?.adminSetupKey;
-    const supplied=req.body?.setupKey;
-    if(!configured){res.status(503).json({error:'Initial administrator setup is not configured'});return;}
-    if(typeof supplied!=='string' || supplied.length>256 || !timingSafeEqual(Buffer.from(digest(supplied),'hex'),Buffer.from(digest(configured),'hex'))){res.status(403).json({error:'Invalid setup key'});return;}
-    const username=typeof req.body?.username==='string'?req.body.username.toLowerCase():'';
-    const password=req.body?.password;
-    if(!validUsername(username) || !validPassword(password)){res.status(400).json({error:'Use a valid username and a password of 12–128 characters'});return;}
-    try {
-      const user=await createInitialAdmin(pool,username,password);
+    if(!await allowed(`initial-setup-ip:${req.ip}`,5)){res.status(429).json({error:'Too many attempts; try later'});return;}
+    const email=typeof req.body?.email==='string'?req.body.email.trim().toLowerCase():'';
+    const password=req.body?.password,confirm=req.body?.confirmPassword;
+    if(!validEmail(email)||!validPassword(password)){res.status(400).json({error:'Enter a valid email and password of 12–128 characters'});return;}
+    if(password!==confirm){res.status(400).json({error:'Passwords do not match'});return;}
+    try{
+      const raw=token(),user=await createInitialAdmin(pool,email,password,digest(raw));
+      res.cookie(cookieName,raw,{...cookieOptions,maxAge:8*60*60*1000});
       res.status(201).json({status:'created',user});
-    } catch(error) {
-      if((error as {code?:string}).code==='23505'){res.status(409).json({error:'Username unavailable'});return;}
-      if(error instanceof Error && error.message==='Administrator already exists'){res.status(409).json({error:'Master Admin has already been created'});return;}
+    }catch(error){
+      if(error instanceof Error&&error.message==='Initial registration is closed'){res.status(409).json({error:'The first account has already been created. Sign in instead.'});return;}
+      if((error as {code?:string}).code==='23505'){res.status(409).json({error:'Account already exists'});return;}
       throw error;
     }
   });
   router.post('/auth/login',async(req,res)=>{
-    const username=typeof req.body?.username==='string'?req.body.username.toLowerCase():'';
+    const identifier=req.body?.identifier??req.body?.email??req.body?.username;
+    const username=typeof identifier==='string'?identifier.trim().toLowerCase():'';
     const password=req.body?.password;
-    if (!await allowed(`login-ip:${req.ip}`,30) || !await allowed(`login-user:${username.slice(0,80)}`,10)) {res.status(429).json({error:'Too many attempts; try later'});return;}
-    if (!validUsername(username) || typeof password!=='string' || password.length>128) {res.status(401).json({error:'Invalid username or password'});return;}
-    const result=await pool.query<User & {password_hash:string;enabled:boolean;tenant_enabled:boolean}>(`SELECT u.*,t.enabled AS tenant_enabled FROM ethiosms.users u JOIN ethiosms.tenants t ON t.id=u.tenant_id WHERE username=$1`,[username]);
+    if (!await allowed(`login-ip:${req.ip}`,30) || !await allowed(`login-user:${username.slice(0,254)}`,10)) {res.status(429).json({error:'Too many attempts; try later'});return;}
+    if ((!validUsername(username)&&!validEmail(username)) || typeof password!=='string' || password.length>128) {res.status(401).json({error:'Invalid email/username or password'});return;}
+    const result=await pool.query<User & {password_hash:string;enabled:boolean;tenant_enabled:boolean}>(`SELECT u.*,t.enabled AS tenant_enabled FROM ethiosms.users u JOIN ethiosms.tenants t ON t.id=u.tenant_id WHERE username=$1 OR email=$1`,[username]);
     const user=result.rows[0];
-    if (!await verifyPassword(password,user?.password_hash) || !user?.enabled || !user.tenant_enabled) {res.status(401).json({error:'Invalid username or password'});return;}
+    if (!await verifyPassword(password,user?.password_hash) || !user?.enabled || !user.tenant_enabled) {res.status(401).json({error:'Invalid email/username or password'});return;}
     const raw=token();
     // Recheck account state under lock so a concurrent disable/reset cannot create a usable session.
     const created=await transaction(pool,async client=>{
@@ -83,8 +82,8 @@ export function accountRouter(pool:pg.Pool, production:boolean,dispatcher?:Dispa
       if (!active.rowCount) return false;
       await client.query("INSERT INTO ethiosms.sessions(token_hash,tenant_id,user_id,expires_at) VALUES ($1,$2,$3,now()+interval '8 hours')",[digest(raw),user.tenant_id,user.id]);return true;
     });
-    if (!created) {res.status(401).json({error:'Invalid username or password'});return;}
-    res.cookie(cookieName,raw,{...cookieOptions,maxAge:8*60*60*1000});res.json({user:{id:user.id,username:user.username,role:user.role}});
+    if (!created) {res.status(401).json({error:'Invalid email/username or password'});return;}
+    res.cookie(cookieName,raw,{...cookieOptions,maxAge:8*60*60*1000});res.json({user:{id:user.id,username:user.username,email:user.email,role:user.role}});
   });
   router.post('/auth/setup',async(req,res)=>{
     if (!await allowed(`setup-ip:${req.ip}`,20)) {res.status(429).json({error:'Too many attempts; try later'});return;}
@@ -107,13 +106,13 @@ export function accountRouter(pool:pg.Pool, production:boolean,dispatcher?:Dispa
     if (!changed) {res.status(400).json({error:'Invalid or expired setup token'});return;}
     res.clearCookie(cookieName,cookieOptions);res.json({status:'password_set'});
   });
-  router.get('/auth/me',authenticate,(_req,res)=>{const user=res.locals.user as User;res.json({user:{id:user.id,username:user.username,role:user.role}});});
+  router.get('/auth/me',authenticate,(_req,res)=>{const user=res.locals.user as User;res.json({user:{id:user.id,username:user.username,email:user.email,role:user.role}});});
   router.post('/auth/logout',async(req,res)=>{
     const raw=sessionToken(req);if(raw)await pool.query('DELETE FROM ethiosms.sessions WHERE token_hash=$1',[digest(raw)]);
     res.clearCookie(cookieName,cookieOptions);res.status(204).end();
   });
   router.get('/admin/users',authenticate,admin,async(_req,res)=>{
-    const result=await pool.query('SELECT id,username,role,enabled,created_at FROM ethiosms.users ORDER BY created_at DESC LIMIT 100');res.json({users:result.rows});
+    const result=await pool.query('SELECT id,username,email,role,enabled,created_at FROM ethiosms.users ORDER BY created_at DESC LIMIT 100');res.json({users:result.rows});
   });
   router.post('/admin/users',authenticate,admin,async(req,res)=>{
     if(!validUsername(req.body?.username)){res.status(400).json({error:'Username must be 3–80 lowercase letters, digits, dots, underscores or hyphens'});return;}

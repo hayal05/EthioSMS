@@ -4,6 +4,7 @@ const scrypt = promisify(derive);
 export const digest = (value:string) => createHash('sha256').update(value).digest('hex');
 export const token = () => randomBytes(32).toString('hex');
 export function validUsername(value:unknown): value is string { return typeof value === 'string' && /^[a-z0-9][a-z0-9_.-]{2,79}$/.test(value); }
+export function validEmail(value:unknown): value is string { return typeof value==='string' && value.length<=254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value); }
 export function validPassword(value:unknown): value is string { return typeof value === 'string' && value.length >= 12 && value.length <= 128; }
 export async function hashPassword(password:string):Promise<string> {
   const salt = randomBytes(16).toString('hex');

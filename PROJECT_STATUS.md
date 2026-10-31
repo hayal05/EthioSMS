@@ -22,3 +22,6 @@ Local checks and production builds pass; production dependency audit reported ze
 Task 12 CI verifies a queued fixture through PostgreSQL dump/restore and database restart. The owner must still rehearse restoration on an isolated Neon branch. Free hosting does not guarantee OTP timing. Automatic inbound STOP, paid billing/credits, public registration, advanced scheduling, custom Android development and multi-device failover remain deferred.
 
 Retention keeps opaque request identities after content cleanup; old replays return 410 instead of producing duplicate SMS. Expired OTP request metadata cannot generate a fresh code under an old event key. Regression tests cover both cases.
+
+## First-account master admin update
+The first-account form now uses email, password and confirmation only. Atomic first-account checks and a unique master-admin database index prevent concurrent duplicate owners. Creation signs the owner in; email login is supported alongside legacy usernames. Existing accounts remain unchanged. Migration 010 is required.
