@@ -1,10 +1,10 @@
 import express, { type Request, type Response, type NextFunction } from 'express';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import type pg from 'pg';
 import { transaction } from '../db/pool.js';
 import { digest, token, validUsername, validPassword, hashPassword, verifyPassword } from './security.js';
 import { maintain } from '../db/maintenance.js';
-import { createAccount } from './accounts.js';
+import { createAccount, createInitialAdmin } from './accounts.js';
 import type { Dispatcher } from '../messaging/dispatch.js';
 import { campaignRouter } from '../messaging/campaigns.js';
 import { dashboardRouter } from '../developer/dashboard.js';
@@ -45,6 +45,29 @@ export function accountRouter(pool:pg.Pool, production:boolean,dispatcher?:Dispa
       ON CONFLICT(key_hash,bucket) DO UPDATE SET hits=ethiosms.auth_limits.hits+1 RETURNING hits`,[digest(key)]);
     return result.rows[0]!.hits<=limit;
   }
+  router.get('/auth/setup/status',async(_req,res)=>{
+    const result=await pool.query<{exists:boolean}>("SELECT EXISTS(SELECT 1 FROM ethiosms.users WHERE role='admin') AS exists");
+    const setupRequired=!result.rows[0]?.exists;
+    res.json({setupRequired,setupAvailable:setupRequired&&!!config?.adminSetupKey});
+  });
+  router.post('/auth/setup/initial',async(req,res)=>{
+    if (!await allowed(`initial-setup-ip:${req.ip}`,5)) {res.status(429).json({error:'Too many attempts; try later'});return;}
+    const configured=config?.adminSetupKey;
+    const supplied=req.body?.setupKey;
+    if(!configured){res.status(503).json({error:'Initial administrator setup is not configured'});return;}
+    if(typeof supplied!=='string' || supplied.length>256 || !timingSafeEqual(Buffer.from(digest(supplied),'hex'),Buffer.from(digest(configured),'hex'))){res.status(403).json({error:'Invalid setup key'});return;}
+    const username=typeof req.body?.username==='string'?req.body.username.toLowerCase():'';
+    const password=req.body?.password;
+    if(!validUsername(username) || !validPassword(password)){res.status(400).json({error:'Use a valid username and a password of 12–128 characters'});return;}
+    try {
+      const user=await createInitialAdmin(pool,username,password);
+      res.status(201).json({status:'created',user});
+    } catch(error) {
+      if((error as {code?:string}).code==='23505'){res.status(409).json({error:'Username unavailable'});return;}
+      if(error instanceof Error && error.message==='Administrator already exists'){res.status(409).json({error:'Master Admin has already been created'});return;}
+      throw error;
+    }
+  });
   router.post('/auth/login',async(req,res)=>{
     const username=typeof req.body?.username==='string'?req.body.username.toLowerCase():'';
     const password=req.body?.password;
