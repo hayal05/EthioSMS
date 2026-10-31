@@ -1,4 +1,5 @@
 import { useEffect,useState } from 'react';
+import { Messages,Operations } from './Messages';
 import { api } from './api';
 interface Application {id:string;name:string;enabled:boolean;account?:string}
 interface Key {id:string;prefix:string;scopes:string[];revoked_at:string|null}
@@ -14,7 +15,7 @@ export function Developer({admin}:{admin:boolean}) {
   useEffect(()=>{void refresh().catch(error=>setNotice(error.message));},[admin]);
   useEffect(()=>{setIssued('');setKeys([]);setUsage(null);void details(selected).catch(error=>setNotice(error.message));},[selected]);
   async function act(work:()=>Promise<void>){setBusy(true);setNotice('');setIssued('');try{await work();await refresh();await details(selected);}catch(error){setNotice(error instanceof Error?error.message:'Request failed');}finally{setBusy(false);}}
-  return <section className="accounts" aria-label="Developer applications"><h2>Applications & API keys</h2>
+  return <><section className="accounts" aria-label="Developer applications"><h2>Applications & API keys</h2>
     <form onSubmit={event=>{event.preventDefault();void act(async()=>{await api('/applications','POST',{name});setName('');setNotice('Application created. Administrator approval is required before API access.');});}}><label>Application name<input required maxLength={120} value={name} onChange={event=>setName(event.target.value)}/></label><button disabled={busy}>Create application</button></form>
     <label className="app-select">Your application<select value={selected} onChange={event=>setSelected(event.target.value)} disabled={busy}><option value="">Select application</option>{applications.map(item=><option key={item.id} value={item.id}>{item.name} · {item.enabled?'Enabled':'Disabled / awaiting approval'}</option>)}</select></label>
     {selected&&<><div className="actions"><button className="secondary" disabled={busy} onClick={()=>void act(async()=>{await api(`/applications/${selected}`,'PATCH',{enabled:false});})}>Disable application</button></div>
@@ -26,5 +27,5 @@ export function Developer({admin}:{admin:boolean}) {
     {admin&&<><h2>Application approvals</h2><ul className="user-list">{allApps.map(item=><li key={item.id}><span>{item.name} · {item.account}</span><button className="secondary" disabled={busy} onClick={()=>void act(async()=>{await api(`/admin/applications/${item.id}`,'PATCH',{enabled:!item.enabled});})}>{item.enabled?'Disable':'Approve & enable'}</button></li>)}</ul>
       <h2>Pilot limits</h2><form onSubmit={event=>{event.preventDefault();void act(async()=>{await api('/admin/limits','PATCH',{...limits,allowed_destination_prefixes:prefixes.split(',').map(value=>value.trim())});setNotice('Limits saved.');});}}>{Object.entries(limitLabels).map(([key,label])=><label key={key}>{label}<input type="number" required min={key.includes('daily')?0:1} max={key.includes('daily')?100000:10000} value={limits[key]??''} onChange={event=>setLimits({...limits,[key]:Number(event.target.value)})}/></label>)}<label>Allowed prefixes (comma separated)<input required value={prefixes} onChange={event=>setPrefixes(event.target.value)}/></label><button disabled={busy}>Save limits</button></form></>}
     <p role="status">{notice}</p>
-  </section>;
+  </section>{selected&&<section className="accounts"><Messages key={selected} applicationId={selected} onChanged={()=>{void details(selected).catch(error=>setNotice(error.message));}}/></section>}{admin&&<Operations/>}</>;
 }

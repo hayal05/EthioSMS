@@ -88,3 +88,6 @@ Targeted cloud adapter, exact live recipient allowlist, explicit live enablement
 
 ## Task 8 — OTP service
 Purpose/application-bound single-use challenges, cryptographic six-digit codes, independent keyed digests, encrypted queued payloads, expiry/cooldown/attempt limits, recipient/IP limits, atomic quota integration and supersession implemented. Codes never appear in API responses. Queued payloads are erased on settlement/verification exhaustion. CI includes lifecycle and concurrent verification tests.
+
+## Task 9 — Compact dashboards
+Session-authenticated message form, paginated history, masked detail, server-calculated usage, admin queue/failure summaries, transport-mode badges, last API contact, and pause/recovery controls implemented. Shared validation/persistence is reused by API and dashboard; user app ownership and request limits enforced.
