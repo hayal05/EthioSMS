@@ -44,6 +44,6 @@ Implemented on `feature/task-3-accounts`, stacked on Task 2:
 - Mutation request protection, private response caching controls, redacted errors, and account audit events.
 - PostgreSQL integration coverage for invite expiry/reuse, roles, disabling, recovery, throttling, and logout.
 
-Local type checks, six non-database tests, and production builds passed. PostgreSQL-backed account verification is required in CI. Main remains unchanged; nothing is deployed and live SMS is disabled.
+Local type checks, six non-database tests, and production builds passed. PostgreSQL-backed account tests passed in GitHub CI (runs 41226584997 and 41226580952) for implementation commit 6f766b2. Main remains unchanged; nothing is deployed and live SMS is disabled.
 
 Next: Task 4 — developer applications, API keys, and atomic quotas.
