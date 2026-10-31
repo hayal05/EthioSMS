@@ -59,7 +59,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const otpTtl=Number(env.OTP_TTL_SECONDS??300),otpCooldown=Number(env.OTP_RESEND_SECONDS??60),otpAttempts=Number(env.OTP_MAX_ATTEMPTS??5);
   if(!Number.isInteger(otpTtl)||otpTtl<60||otpTtl>600||!Number.isInteger(otpCooldown)||otpCooldown<30||otpCooldown>300||!Number.isInteger(otpAttempts)||otpAttempts<3||otpAttempts>10)throw new Error('Invalid OTP policy');
   const adminSetupKey=env.ADMIN_SETUP_KEY;
-  if(adminSetupKey && (adminSetupKey.length<32 || adminSetupKey.trim()!==adminSetupKey || /\\s/.test(adminSetupKey))) throw new Error('ADMIN_SETUP_KEY must be at least 32 characters without whitespace');
+  if(adminSetupKey && (adminSetupKey.length<32 || adminSetupKey.trim()!==adminSetupKey || /\s/.test(adminSetupKey))) throw new Error('ADMIN_SETUP_KEY must be at least 32 characters without whitespace');
   const token = env.READINESS_TOKEN;
   if (token && (token.length < 32 || token.trim() !== token || /\s/.test(token))) throw new Error('READINESS_TOKEN must be at least 32 characters without whitespace');
   if (nodeEnv === 'production' && !token) throw new Error('READINESS_TOKEN is required in production');
