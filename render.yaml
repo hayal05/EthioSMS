@@ -4,7 +4,7 @@ services:
     name: ethiosms-pilot
     runtime: node
     plan: free
-    branch: feature/task-12-pilot-readiness
+    branch: main
     autoDeploy: false
     buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start

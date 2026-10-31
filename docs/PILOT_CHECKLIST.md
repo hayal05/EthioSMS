@@ -17,7 +17,7 @@ Each staged pull request has its own CI. See PROJECT_STATUS.md for the verified 
 
 ## Required before expanding the pilot
 
-- [ ] Review/merge the pull request chain in order (1 through 12).
+- [x] Review/merge the pull request chain in order (1 through 12).
 - [ ] Owner authorizes/configures Render deployment and Neon URL/secrets; verify HTTPS/cookies and private readiness.
 - [ ] Rehearse restore on the owner's isolated Neon branch with dispatch paused and live flags off.
 - [x] Local desktop/mobile browser walkthrough with simulated API responses; no JS errors or horizontal overflow.

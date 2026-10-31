@@ -1,8 +1,8 @@
 # EthioSMS project status
 
-Tasks 1–12 are implemented in sequential, stacked pull requests. Tasks 1–11 passed CI. Task 12 also passed full PostgreSQL backup/restore/restart checks; its final retention replay regression is recorded in PR #12.
+Tasks 1–12 are implemented and merged into main through sequential pull requests. Tasks 1–11 passed CI. Task 12 also passed full PostgreSQL backup/restore/restart checks; its final retention replay regression is recorded in PR #12.
 
-No PR has been merged, no Render/Neon service has been created or deployed, and no real SMS has been sent. Physical phone delivery, actual hosting behavior, owner restore rehearsal and the 2–5-user live pilot remain pending. See [acceptance checklist](docs/PILOT_CHECKLIST.md).
+PRs #1–#12 have been merged into main. No Render/Neon service has been created or deployed, and no real SMS has been sent. Physical phone delivery, actual hosting behavior, owner restore rehearsal and the 2–5-user live pilot remain pending. See [acceptance checklist](docs/PILOT_CHECKLIST.md).
 
 | Task | Review | CI | Implementation commit |
 |---|---|---|---|

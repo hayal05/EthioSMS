@@ -2,9 +2,9 @@
 
 ## Deployment gate
 
-Repository work and simulated tests do not create a running service. No Render/Neon project, phone credential, live SMS configuration, or deployment has been activated. The owner must choose/provide infrastructure and approve deployment/live testing. All pull requests remain unmerged.
+Repository work and simulated tests do not create a running service. No Render/Neon project, phone credential, live SMS configuration, or deployment has been activated. The owner must choose/provide infrastructure and approve deployment/live testing. Implementation pull requests #1–#12 are merged into main.
 
-The [Render blueprint](../render.yaml) provisions ONE free web service only when manually imported and deployed. It targets the final stacked pilot branch because main does not yet contain the implementation. After merging the reviewed chain, change the branch to main. Automatic deployment is disabled. Reference: [Render blueprint specification](https://render.com/docs/blueprint-spec).
+The [Render blueprint](../render.yaml) provisions ONE free web service only when manually imported and deployed. It targets main, which contains the merged pilot implementation. Automatic deployment is disabled. Reference: [Render blueprint specification](https://render.com/docs/blueprint-spec).
 
 ## Configure and start a mock pilot
 
