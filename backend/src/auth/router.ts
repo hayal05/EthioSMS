@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type pg from 'pg';
 import { transaction } from '../db/pool.js';
 import { digest, token, validUsername, validPassword, hashPassword, verifyPassword } from './security.js';
+import { maintain } from '../db/maintenance.js';
 import { createAccount } from './accounts.js';
 import type { Dispatcher } from '../messaging/dispatch.js';
 import { campaignRouter } from '../messaging/campaigns.js';
@@ -133,6 +134,19 @@ export function accountRouter(pool:pg.Pool, production:boolean,dispatcher?:Dispa
       await client.query("INSERT INTO ethiosms.audit_events(id,tenant_id,actor_user_id,action,resource_id) VALUES ($1,$2,$3,$4,$5)",[randomUUID(),actor.tenant_id,actor.id,req.body.enabled?'application.enabled':'application.disabled',req.params.id]);return true;
     });
     res.status(changed?200:404).json(changed?{status:'updated'}:{error:'Application not found'});
+  });
+  router.post('/admin/maintenance',authenticate,admin,async(_req,res)=>{
+    const result=await maintain(pool);
+    await pool.query("INSERT INTO ethiosms.audit_events(id,tenant_id,actor_user_id,action) VALUES ($1,$2,$3,'maintenance.executed')",[randomUUID(),res.locals.user.tenant_id,res.locals.user.id]);
+    res.json(result);
+  });
+  router.patch('/admin/retention',authenticate,admin,async(req,res)=>{
+    const values=[req.body?.messageDays,req.body?.otpHours,req.body?.auditDays];
+    if(values.some((value,i)=>!Number.isInteger(value)||value<1||value>[365,168,730][i]!)){res.status(400).json({error:'Invalid retention policy'});return;}
+    await transaction(pool,async client=>{
+      await client.query('UPDATE ethiosms.settings SET message_retention_days=$1,otp_retention_hours=$2,audit_retention_days=$3',values);
+      await client.query("INSERT INTO ethiosms.audit_events(id,tenant_id,actor_user_id,action) VALUES ($1,$2,$3,'retention.updated')",[randomUUID(),res.locals.user.tenant_id,res.locals.user.id]);
+    });res.json({status:'updated'});
   });
   router.post('/admin/dispatch',authenticate,admin,async(req,res)=>{
     if(typeof req.body?.paused!=='boolean'){res.status(400).json({error:'Boolean paused flag required'});return;}

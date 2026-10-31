@@ -11,7 +11,8 @@
     "start": "node --env-file-if-exists=../.env dist/server.js",
     "db:migrate": "node --env-file-if-exists=../.env --import tsx src/db/migrate.ts",
     "admin:bootstrap": "node --env-file-if-exists=../.env --import tsx src/auth/bootstrap.ts bootstrap",
-    "admin:recover": "node --env-file-if-exists=../.env --import tsx src/auth/bootstrap.ts recover"
+    "admin:recover": "node --env-file-if-exists=../.env --import tsx src/auth/bootstrap.ts recover",
+    "db:maintain": "node --env-file-if-exists=../.env --import tsx src/db/maintain.ts"
   },
   "dependencies": {
     "express": "^5.1.0",

@@ -131,7 +131,7 @@ Public signup; automated payments and commercial credit billing; subscriptions; 
 
 ## Completion rules
 
-Implement tasks sequentially, keep changes reviewable, and update this checklist/status as work proceeds. CI validates each implementation step before starting dependent work. This document authorizes planning only; no implementation, deployment, or live sending is performed by creating it.
+Implement tasks sequentially, keep changes reviewable, and update this checklist/status as work proceeds. CI validates each implementation step before starting dependent work. Implementation is reviewed through sequential pull requests. Deployment and live transport are separate operational gates; the checklist records what is still unverified.
 
 ## Progress
 
@@ -146,4 +146,4 @@ Implement tasks sequentially, keep changes reviewable, and update this checklist
 - [x] Task 9: Dashboards
 - [x] Task 10: Small bulk sends
 - [x] Task 11: Integration documentation
-- [ ] Task 12: Deployment and pilot validation
+- [x] Task 12: Deployment preparation and automated validation — real deployment/physical pilot gates remain pending in docs/PILOT_CHECKLIST.md

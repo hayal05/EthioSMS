@@ -5,3 +5,7 @@
 .app-select{display:flex;flex-direction:column;gap:8px;max-width:460px;font-size:13px;margin:20px 0}.accounts select{font:inherit;padding:10px;border:1px solid #c9d3c4;border-radius:8px;background:white}.accounts fieldset{border:1px solid #dce3cf;border-radius:10px;padding:12px;display:flex;gap:12px;flex-wrap:wrap;width:100%}.accounts .permission{flex:initial;min-width:auto;flex-direction:row;align-items:center}.permission input{width:auto}.user-list small{display:block;font-size:11px;color:#607269;margin-top:6px}.accounts .actions{margin:8px 0}
 
 .accounts textarea{font:inherit;min-height:110px;width:100%;padding:12px;border:1px solid #c9d3c4;border-radius:8px;resize:vertical}.accounts .wide{flex-basis:100%}.table-wrap{overflow-x:auto;margin:20px 0}table{border-collapse:collapse;width:100%;font-size:13px;white-space:nowrap}th,td{text-align:left;padding:12px;border-bottom:1px solid #e1e6dc}.state{padding:4px 8px;border-radius:12px;background:#edf2e1}.state.failed,.state.unknown{background:#fae8d9;color:#7d3e1e}.state.delivered{background:#daefdc;color:#205b2a}.message-panel .badge{font-size:11px;font-weight:normal}
+
+.token,.user-list li>span{overflow-wrap:anywhere;min-width:0}
+
+.actions{flex-wrap:wrap}.accounts fieldset{min-inline-size:0}

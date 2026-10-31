@@ -20,6 +20,7 @@
     "check": "npm run typecheck && npm test && npm run build",
     "db:migrate": "npm run db:migrate -w backend",
     "admin:bootstrap": "npm run admin:bootstrap -w backend --",
-    "admin:recover": "npm run admin:recover -w backend --"
+    "admin:recover": "npm run admin:recover -w backend --",
+    "db:maintain": "npm run db:maintain -w backend"
   }
 }
