@@ -1,16 +1,17 @@
 import { createApp } from './app.js';
 import { loadConfig } from './config.js';
 import { createDatabase } from './db/pool.js';
+import { SmsGate } from './messaging/smsgate.js';
 import { Dispatcher } from './messaging/dispatch.js';
 import { databaseReady } from './db/migrations.js';
 
 try {
   const config = loadConfig();
   const database = config.databaseUrl ? createDatabase(config.databaseUrl) : undefined;
-  const dispatcher=database&&config.payloadEncryptionKey?new Dispatcher(database,config.payloadEncryptionKey):undefined;
+  const dispatcher=database&&config.payloadEncryptionKey?new Dispatcher(database,config.payloadEncryptionKey,config.gateway==='smsgate'?new SmsGate(config,database):undefined,config.gateway==='smsgate'?'live':'mock'):undefined;
   const server = createApp(config, undefined, database ? () => databaseReady(database) : undefined, database,dispatcher).listen(config.port, '0.0.0.0', () => {
     dispatcher?.kick();
-    console.info(`EthioSMS listening on port ${config.port}; mock gateway; SMS disabled`);
+    console.info(`EthioSMS listening on port ${config.port}; ${config.gateway} gateway; live SMS ${config.smsEnabled}`);
   });
   server.on('error', () => { console.error('Server failed to listen'); process.exitCode = 1; });
   const shutdown = () => {

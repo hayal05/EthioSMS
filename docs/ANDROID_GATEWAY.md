@@ -1,0 +1,15 @@
+# Android gateway setup and live-test gate
+
+The adapter follows SMSGate's official [sending API](https://docs.sms-gate.app/features/sending-messages/), [authentication](https://docs.sms-gate.app/integration/authentication/), and [status tracking](https://docs.sms-gate.app/features/status-tracking/) documentation (checked 2026-10-31).
+
+1. Install SMS Gateway for Android from its official GitHub releases. Enable Cloud mode and grant the required SMS permissions. Select the intended SIM, allow its required background operation, and keep the phone charged with cellular coverage and internet access.
+2. Record the exact device ID. Configure a dedicated credential privately. Prefer a scoped JWT (`messages:send`, `messages:read`) in `SMSGATE_TOKEN`; its expiry/renewal must be managed by the operator. Legacy Basic credentials can instead use `SMSGATE_USERNAME` and `SMSGATE_PASSWORD`. Never paste credentials into GitHub issues, client-side code, or public logs.
+3. Configure `SMSGATE_DEVICE_ID`, `SMSGATE_SIM` (1–3), and `LIVE_SMS_RECIPIENTS` (comma-separated exact numbers for consenting test recipients). Verify operator permission, package coverage and consent before sending.
+4. Live mode requires all of `SMS_GATEWAY=smsgate`, `SMS_ENABLED=true`, `LIVE_SMS_APPROVED=true`, the exact recipient allowlist, encryption key, device and credentials. Defaults remain mock/false. Setting these values and unpausing dispatch are explicit operational actions, not performed by this implementation.
+5. After approval, send one short allowlisted message, then Unicode and multipart examples. Verify the SIM selected, sender number, segmentation, sent/delivery status and measured delay on the actual phone. Test phone offline, reconnection and backend restart before inviting users.
+
+Cloud requests target one device, carry a stable recipient ID and remaining TTL, request delivery reports, and time out after 10 seconds. A POST timeout, malformed success response, server error or conflict is treated as uncertain and never blindly resent. Existing mock jobs cannot enter the live adapter: job modes are persisted and dispatcher selection is mode-specific. The adapter checks the live allowlist again immediately before transport.
+
+Status updates use authenticated server-side GET reconciliation rather than an unauthenticated webhook. Pending/Processed are not sent receipts. Processed without confirmation becomes unknown after five minutes. “Delivered” reflects the provider report; SMSGate documents multipart aggregation limitations, so physical verification is still required. The last successful API contact is stored separately; it does not prove the phone is online. No callback URL is exposed and no gateway credentials reach customers. The public gateway sees the outbound content over HTTPS; local database encryption is not end-to-end gateway encryption.
+
+Live phone testing is PENDING until the operator provides and authorizes the device/configuration. CI uses mocked HTTP only and never sends real SMS. A private SMSGate deployment still needs its own MySQL/MariaDB infrastructure; Neon stores EthioSMS application data only.
