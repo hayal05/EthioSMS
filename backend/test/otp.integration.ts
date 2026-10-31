@@ -15,7 +15,7 @@ export async function otpTests(pool:pg.Pool,t:TestContext){
   await pool.query('UPDATE ethiosms.settings SET key_requests_per_minute=1000,application_requests_per_minute=1000,tenant_requests_per_minute=1000,global_requests_per_minute=1000');
   const issued=await issueKey(pool,tenant,application,['otp:request','otp:verify']);const auth=`Bearer ${issued.apiKey}`;
   const app=createApp(loadConfig({OTP_SECRET:secret,PAYLOAD_ENCRYPTION_KEY:key}),'/nonexistent',undefined,pool);
-  async function create(purpose:string,id=randomUUID()) {return request(app).post('/api/v1/otp/request').set('Authorization',auth).set('Idempotency-Key',id).send({to:'0912345678',purpose});}
+  function create(purpose:string,id=randomUUID()) {return request(app).post('/api/v1/otp/request').set('Authorization',auth).set('Idempotency-Key',id).send({to:'0912345678',purpose});}
   async function codeFor(id:string){const row=(await pool.query('SELECT j.*,o.code_digest FROM ethiosms.otp_challenges o JOIN ethiosms.message_jobs j ON j.id=o.job_id WHERE o.id=$1',[id])).rows[0];const payload=decryptPayload(key,payloadContext(tenant,application,row.idempotency_key),row.payload_ciphertext) as {message:string};const code=payload.message.match(/\d{6}/)![0];assert.notEqual(row.code_digest,code);return code;}
   const verify=(id:string,purpose:string,code:string)=>request(app).post('/api/v1/otp/verify').set('Authorization',auth).send({challengeId:id,purpose,code});
   await t.test('OTP request replay, cooldown, purpose and single-use verification',async()=>{
