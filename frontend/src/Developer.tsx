@@ -1,4 +1,5 @@
 import { useEffect,useState } from 'react';
+import { Campaigns,CampaignReview } from './Campaigns';
 import { Messages,Operations } from './Messages';
 import { api } from './api';
 interface Application {id:string;name:string;enabled:boolean;account?:string}
@@ -27,5 +28,5 @@ export function Developer({admin}:{admin:boolean}) {
     {admin&&<><h2>Application approvals</h2><ul className="user-list">{allApps.map(item=><li key={item.id}><span>{item.name} · {item.account}</span><button className="secondary" disabled={busy} onClick={()=>void act(async()=>{await api(`/admin/applications/${item.id}`,'PATCH',{enabled:!item.enabled});})}>{item.enabled?'Disable':'Approve & enable'}</button></li>)}</ul>
       <h2>Pilot limits</h2><form onSubmit={event=>{event.preventDefault();void act(async()=>{await api('/admin/limits','PATCH',{...limits,allowed_destination_prefixes:prefixes.split(',').map(value=>value.trim())});setNotice('Limits saved.');});}}>{Object.entries(limitLabels).map(([key,label])=><label key={key}>{label}<input type="number" required min={key.includes('daily')?0:1} max={key.includes('daily')?100000:10000} value={limits[key]??''} onChange={event=>setLimits({...limits,[key]:Number(event.target.value)})}/></label>)}<label>Allowed prefixes (comma separated)<input required value={prefixes} onChange={event=>setPrefixes(event.target.value)}/></label><button disabled={busy}>Save limits</button></form></>}
     <p role="status">{notice}</p>
-  </section>{selected&&<section className="accounts"><Messages key={selected} applicationId={selected} onChanged={()=>{void details(selected).catch(error=>setNotice(error.message));}}/></section>}{admin&&<Operations/>}</>;
+  </section>{selected&&<section className="accounts"><Messages key={selected} applicationId={selected} onChanged={()=>{void details(selected).catch(error=>setNotice(error.message));}}/></section>}{selected&&<Campaigns key={selected} applicationId={selected}/ >}{admin&&<><Operations/><CampaignReview/></>}</>;
 }

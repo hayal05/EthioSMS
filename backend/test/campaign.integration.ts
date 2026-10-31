@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+import type { TestContext } from 'node:test';
+import type pg from 'pg';
+import { randomUUID } from 'node:crypto';
+import request from 'supertest';
+import { digest,token } from '../src/auth/security.js';
+import { createApp } from '../src/app.js';
+import { loadConfig } from '../src/config.js';
+import { Dispatcher } from '../src/messaging/dispatch.js';
+export async function campaignTests(pool:pg.Pool,t:TestContext){
+ await t.test('campaign preview, approval, suppression and cancellation preserve queue/accounting',async()=>{
+  const tenant=randomUUID(),user=randomUUID(),application=randomUUID(),raw=token(),adminToken=token(),key='9'.repeat(64);
+  await pool.query('UPDATE ethiosms.settings SET key_requests_per_minute=1000,application_requests_per_minute=1000,tenant_requests_per_minute=1000,global_requests_per_minute=1000');
+  await pool.query('INSERT INTO ethiosms.tenants(id,name,enabled) VALUES ($1,$2,true)',[tenant,'campaign']);
+  await pool.query('INSERT INTO ethiosms.users(id,tenant_id,username,enabled) VALUES ($1,$2,$3,true)',[user,tenant,'campaign_owner']);
+  await pool.query('INSERT INTO ethiosms.applications(id,tenant_id,name,enabled) VALUES ($1,$2,$3,true)',[application,tenant,'campaign']);
+  const administrator=(await pool.query("SELECT id,tenant_id FROM ethiosms.users WHERE role='admin' LIMIT 1")).rows[0];
+  for(const [session,tid,uid] of [[raw,tenant,user],[adminToken,administrator.tenant_id,administrator.id]])await pool.query("INSERT INTO ethiosms.sessions(token_hash,tenant_id,user_id,expires_at) VALUES ($1,$2,$3,now()+interval '1 hour')",[digest(session),tid,uid]);
+  const owner={Cookie:`ethiosms_session=${raw}`,'X-EthioSMS-Request':'1'},admin={Cookie:`ethiosms_session=${adminToken}`,'X-EthioSMS-Request':'1'};
+  const app=createApp(loadConfig({PAYLOAD_ENCRYPTION_KEY:key}),'/nonexistent',undefined,pool),base=`/api/applications/${application}`;
+  await request(app).post(`${base}/suppressions`).set(owner).send({to:'0712345678'}).expect(201);
+  const body={contacts:'phone\n0912345678\n+251912345678\n0712345678',message:'Campaign test',optOutInstructions:'Call us to opt out',consentNote:'Recipients consented in person',consentConfirmed:true};
+  const preview=await request(app).post(`${base}/campaigns/preview`).set(owner).send(body).expect(200);assert.equal(preview.body.duplicates,1);assert.equal(preview.body.suppressed,1);assert.equal(preview.body.eligible.length,1);
+  await request(app).post(`${base}/campaigns`).set(owner).set('Idempotency-Key','no-consent').send({...body,consentConfirmed:false}).expect(400);
+  const created=await request(app).post(`${base}/campaigns`).set(owner).set('Idempotency-Key','campaign-fixture').send(body).expect(202),id=created.body.id;
+  assert.equal((await request(app).post(`${base}/campaigns`).set(owner).set('Idempotency-Key','campaign-fixture').send(body).expect(202)).body.id,id);
+  await pool.query("UPDATE ethiosms.message_recipients SET status='cancelled' WHERE status='queued' AND job_id<>$1",[id]);
+  await pool.query('UPDATE ethiosms.settings SET sending_paused=false');const worker=new Dispatcher(pool,key);await worker.drain();
+  assert.equal((await pool.query('SELECT status FROM ethiosms.message_recipients WHERE job_id=$1',[id])).rows[0].status,'queued');
+  await request(app).post(`/api/admin/campaigns/${id}/approve`).set(owner).send({reviewConfirmed:true}).expect(403);
+  const review=await request(app).get(`/api/admin/campaigns/${id}`).set(admin).expect(200);assert.match(review.body.message,/Call us to opt out/);
+  await request(app).post(`/api/admin/campaigns/${id}/approve`).set(admin).send({reviewConfirmed:true}).expect(200);await worker.drain();
+  assert.equal((await pool.query('SELECT status FROM ethiosms.message_recipients WHERE job_id=$1',[id])).rows[0].status,'delivered');
+  const second=await request(app).post(`${base}/campaigns`).set(owner).set('Idempotency-Key','cancel-fixture').send({...body,contacts:'0911111111\n0922222222'}).expect(202);
+  const cancelled=await request(app).post(`${base}/campaigns/${second.body.id}/cancel`).set(owner).expect(200);assert.equal(cancelled.body.cancelled,2);
+  assert.equal((await pool.query('SELECT state FROM ethiosms.usage_reservations WHERE job_id=$1',[second.body.id])).rows[0].state,'released');
+  const third=await request(app).post(`${base}/campaigns`).set(owner).set('Idempotency-Key','suppressed-later').send({...body,contacts:'0933333333'}).expect(202);
+  await request(app).post(`${base}/suppressions`).set(owner).send({to:'0933333333'}).expect(201);
+  await request(app).post(`/api/admin/campaigns/${third.body.id}/approve`).set(admin).send({reviewConfirmed:true}).expect(200);await worker.drain();
+  assert.equal((await pool.query('SELECT status FROM ethiosms.message_recipients WHERE job_id=$1',[third.body.id])).rows[0].status,'cancelled');
+  await pool.query('UPDATE ethiosms.settings SET sending_paused=true,key_requests_per_minute=20,application_requests_per_minute=30,tenant_requests_per_minute=60,global_requests_per_minute=120');
+ });
+}
