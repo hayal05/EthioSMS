@@ -2,6 +2,7 @@ import express, { type Request, type Response, type NextFunction, type RequestHa
 import { randomUUID } from 'node:crypto';
 import type pg from 'pg';
 import type { Config } from '../config.js';
+import type { Dispatcher } from '../messaging/dispatch.js';
 import { messageRouter } from '../messaging/router.js';
 import { transaction } from '../db/pool.js';
 import { AccessError,uuid,validScopes } from './common.js';
@@ -93,7 +94,7 @@ export function developerRouter(pool:pg.Pool,authenticate:RequestHandler,admin:R
   });
   router.use(safeError);return router;
 }
-export function apiRouter(pool:pg.Pool,config:Config) {
+export function apiRouter(pool:pg.Pool,config:Config,dispatcher?:Dispatcher) {
   const router=express.Router();
   router.use((_req,res,next)=>{res.set('Cache-Control','no-store');next();});
   router.get('/usage',async(req,res)=>{
@@ -101,7 +102,7 @@ export function apiRouter(pool:pg.Pool,config:Config) {
     const identity=await authenticateKey(pool,authorization.startsWith('Bearer ')?authorization.slice(7):undefined,'usage:read');
     await enforceApiRate(pool,identity);res.json(await usage(pool,identity.tenant_id,identity.application_id));
   });
-  router.use('/messages',messageRouter(pool,config));
+  router.use('/messages',messageRouter(pool,config,dispatcher));
   router.use((_req,res)=>{res.status(404).json({error:'Endpoint not available'});});
   router.use(safeError);return router;
 }
