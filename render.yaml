@@ -1,0 +1,32 @@
+# Manual import/deploy only. No service has been created by this file.
+services:
+  - type: web
+    name: ethiosms-pilot
+    runtime: node
+    plan: free
+    branch: feature/task-12-pilot-readiness
+    autoDeploy: false
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY_HOPS
+        value: '1'
+      - key: SMS_GATEWAY
+        value: mock
+      - key: SMS_ENABLED
+        value: 'false'
+      - key: LIVE_SMS_APPROVED
+        value: 'false'
+      - key: READINESS_TOKEN
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: PAYLOAD_ENCRYPTION_KEY
+        sync: false
+      - key: OTP_SECRET
+        sync: false

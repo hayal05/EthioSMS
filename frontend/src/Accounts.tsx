@@ -2,10 +2,11 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { api } from './api';
 import { Developer } from './Developer';
 interface User { id:string;username:string;role:'admin'|'user';enabled?:boolean }
-export function Accounts() {
+export function Accounts({onSessionChange}:{onSessionChange?:(signedIn:boolean)=>void}) {
   const [user,setUser]=useState<User|null>(null),[mode,setMode]=useState<'login'|'setup'>('login');
   const [username,setUsername]=useState(''),[password,setPassword]=useState(''),[setupToken,setSetupToken]=useState('');
   const [notice,setNotice]=useState(''),[busy,setBusy]=useState(false),[users,setUsers]=useState<User[]>([]),[invite,setInvite]=useState(''),[issued,setIssued]=useState('');
+  useEffect(()=>{onSessionChange?.(!!user);},[user,onSessionChange]);
   useEffect(()=>{void api('/auth/me').then(result=>setUser(result.user)).catch(()=>{});},[]);
   useEffect(()=>{if(user?.role==='admin')void api('/admin/users').then(result=>setUsers(result.users)).catch(error=>setNotice(error.message));},[user]);
   async function submit(event:FormEvent) {
