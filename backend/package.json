@@ -9,7 +9,9 @@
     "test": "node --import tsx --test test/*.test.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "node --env-file-if-exists=../.env dist/server.js",
-    "db:migrate": "node --env-file-if-exists=../.env --import tsx src/db/migrate.ts"
+    "db:migrate": "node --env-file-if-exists=../.env --import tsx src/db/migrate.ts",
+    "admin:bootstrap": "node --env-file-if-exists=../.env --import tsx src/auth/bootstrap.ts bootstrap",
+    "admin:recover": "node --env-file-if-exists=../.env --import tsx src/auth/bootstrap.ts recover"
   },
   "dependencies": {
     "express": "^5.1.0",

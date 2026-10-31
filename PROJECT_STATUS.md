@@ -28,6 +28,22 @@ Implemented on `feature/task-2-database`, stacked on Task 1 (PR #1 remains unmer
 - Atomic internal message storage with scoped idempotency and application/tenant-scoped retrieval.
 - Required PostgreSQL integration tests in CI; no production database configured.
 
-Local type checks, non-database tests, and build pass. Database integration verification runs against disposable PostgreSQL in CI. Live SMS and deployment remain disabled.
+Local type checks, non-database tests, and build pass. PostgreSQL integration tests passed in GitHub CI (runs 41226177967 and 41226174426) for commit f71c398. Live SMS and deployment remain disabled.
 
 Next: Task 3, invited accounts and administrator setup, after Task 2 CI passes.
+
+## Task 3 — Administrator and invited accounts
+
+Implemented on `feature/task-3-accounts`, stacked on Task 2:
+
+- One-time administrator bootstrap and trusted offline administrator recovery commands.
+- Per-invite tenant creation, 24-hour setup/recovery tokens stored as hashes, and password setup.
+- Salted scrypt password hashing, fixed 8-hour sessions with hashed tokens, logout, and PostgreSQL-backed attempt limits.
+- Session authentication and admin-only user/application administration; account disabling and recovery revoke sessions.
+- Basic sign-in/setup and administrator invitation/disable/recovery interface.
+- Mutation request protection, private response caching controls, redacted errors, and account audit events.
+- PostgreSQL integration coverage for invite expiry/reuse, roles, disabling, recovery, throttling, and logout.
+
+Local type checks, six non-database tests, and production builds passed. PostgreSQL-backed account verification is required in CI. Main remains unchanged; nothing is deployed and live SMS is disabled.
+
+Next: Task 4 — developer applications, API keys, and atomic quotas.

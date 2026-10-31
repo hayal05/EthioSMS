@@ -1,6 +1,7 @@
 export interface Config {
   nodeEnv: 'development' | 'test' | 'production';
   port: number;
+  trustProxyHops: number;
   readinessToken?: string;
   databaseUrl?: string;
   gateway: 'mock';
@@ -14,6 +15,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   if (!/^\d+$/.test(port) || Number(port) < 1 || Number(port) > 65535) throw new Error('Invalid PORT');
   if ((env.SMS_GATEWAY ?? 'mock') !== 'mock') throw new Error('Only mock gateway is available');
   if ((env.SMS_ENABLED ?? 'false') !== 'false') throw new Error('Live SMS is unavailable in this release');
+  const trustProxyHops=env.TRUST_PROXY_HOPS??'0';
+  if (!/^[01]$/.test(trustProxyHops)) throw new Error('TRUST_PROXY_HOPS must be 0 or 1');
   let databaseUrl: string | undefined;
   if (env.DATABASE_URL) {
     try {
@@ -31,5 +34,5 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const token = env.READINESS_TOKEN;
   if (token && (token.length < 32 || token.trim() !== token || /\s/.test(token))) throw new Error('READINESS_TOKEN must be at least 32 characters without whitespace');
   if (nodeEnv === 'production' && !token) throw new Error('READINESS_TOKEN is required in production');
-  return { nodeEnv: nodeEnv as Config['nodeEnv'], port: Number(port), readinessToken: token || undefined, databaseUrl, gateway: 'mock', smsEnabled: false };
+  return { nodeEnv: nodeEnv as Config['nodeEnv'], port: Number(port), trustProxyHops:Number(trustProxyHops), readinessToken: token || undefined, databaseUrl, gateway: 'mock', smsEnabled: false };
 }
