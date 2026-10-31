@@ -23,4 +23,10 @@ jobs:
       - name: Apply database migrations
         run: npm run db:migrate
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Prefer a Neon direct connection for migrations when configured.
+          # Fall back to DATABASE_URL so existing repository secrets keep working.
+          DATABASE_URL: ${{ secrets.DATABASE_URL_DIRECT || secrets.DATABASE_URL }}
+      - name: Verify migration history
+        run: npm run db:verify
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_DIRECT || secrets.DATABASE_URL }}
