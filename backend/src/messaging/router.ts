@@ -15,7 +15,8 @@ function cursor(value:unknown):{createdAt:string;id:string}|undefined {
   if(typeof value!=='string'||value.length>512||!/^[A-Za-z0-9_-]+$/.test(value))throw new AccessError(400,'Invalid cursor');
   try{
     const decoded=JSON.parse(Buffer.from(value,'base64url').toString('utf8'));
-    if(!uuid(decoded.id)||typeof decoded.createdAt!=='string'||decoded.createdAt.length>32||!Number.isFinite(Date.parse(decoded.createdAt)))throw new Error();
+    if(!uuid(decoded.id)||typeof decoded.createdAt!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(decoded.createdAt)||!Number.isFinite(Date.parse(decoded.createdAt)))throw new Error();
+    if(Number(decoded.createdAt.slice(0,4))<1||new Date(decoded.createdAt).toISOString()!==decoded.createdAt.slice(0,23)+'Z')throw new Error();
     return {createdAt:decoded.createdAt,id:decoded.id};
   }catch{throw new AccessError(400,'Invalid cursor');}
 }

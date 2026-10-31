@@ -47,10 +47,11 @@ export async function messageTests(pool:pg.Pool,t:TestContext){
   });
   await t.test('bounded history pagination preserves microseconds and isolates applications',async()=>{
     const ids=[firstId];
+    const baseTime=(await pool.query("SELECT date_trunc('second',now())-interval '1 hour' AS base")).rows[0].base;
     for(let i=0;i<2;i++){
       const result=await request(app).post('/api/v1/messages').set('Authorization',a.auth).set('Idempotency-Key',`page-${i}`).send({to:'0712345678',message:'History fixture'}).expect(202);
       ids.push(result.body.id);
-      await pool.query("UPDATE ethiosms.message_jobs SET created_at=date_trunc('second',now())-interval '1 hour'+$1*interval '1 microsecond' WHERE id=$2",[123001+i,result.body.id]);
+      await pool.query("UPDATE ethiosms.message_jobs SET created_at=$1::timestamptz+$2*interval '1 microsecond' WHERE id=$3",[baseTime,123001+i,result.body.id]);
     }
     const found:string[]=[];let cursor:string|null=null;
     for(let i=0;i<5;i++){
@@ -63,6 +64,8 @@ export async function messageTests(pool:pg.Pool,t:TestContext){
     assert.equal(new Set(found).size,3);assert.deepEqual(new Set(found),new Set(ids));
     const isolated=await request(app).get('/api/v1/messages').set('Authorization',`Bearer ${otherKey.apiKey}`).expect(200);assert.deepEqual(isolated.body.messages,[]);
     await request(app).get('/api/v1/messages?cursor=invalid').set('Authorization',a.auth).expect(400);
+    const invalidDateCursor=Buffer.from(JSON.stringify({createdAt:'0',id:firstId})).toString('base64url');
+    await request(app).get('/api/v1/messages').query({cursor:invalidDateCursor}).set('Authorization',a.auth).expect(400);
     await request(app).get('/api/v1/messages?limit=101').set('Authorization',a.auth).expect(400);
   });
   await t.test('validation errors are explicit and mock scenarios remain queued',async()=>{

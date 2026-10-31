@@ -77,3 +77,5 @@ Implemented on `feature/task-5-message-api`, stacked on PR #4:
 No dispatch or live telephony is enabled. Submissions remain queued in mock mode. Dispatch, expiry handling, and usage settlement follow in Task 6.
 
 Next: Task 6 — reliable dispatch and recovery.
+
+Task 5 validation: local type checks, ten non-database tests, and production builds passed. PostgreSQL CI passed for implementation commit 9f46dc5 (runs 41228125771 and 41228122278), covering authenticated submissions, encrypted storage, duplicate retries, scope isolation, history pagination, validation, and concurrent segment quotas. Final cursor validation rejects malformed date formats before querying PostgreSQL.
