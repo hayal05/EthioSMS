@@ -7,14 +7,14 @@ export function Accounts({onSessionChange}:{onSessionChange?:(signedIn:boolean)=
   const [user,setUser]=useState<User|null>(null),[mode,setMode]=useState<Mode>('login');
   const [username,setUsername]=useState(''),[password,setPassword]=useState(''),[confirmPassword,setConfirmPassword]=useState('');
   const [setupToken,setSetupToken]=useState(''),[setupKey,setSetupKey]=useState('');
-  const [setupRequired,setSetupRequired]=useState(false),[setupAvailable,setSetupAvailable]=useState(false),[setupChecked,setSetupChecked]=useState(false);
+  const [setupAvailable,setSetupAvailable]=useState(false);
   const [notice,setNotice]=useState(''),[busy,setBusy]=useState(false),[users,setUsers]=useState<User[]>([]),[invite,setInvite]=useState(''),[issued,setIssued]=useState('');
   useEffect(()=>{onSessionChange?.(!!user);},[user,onSessionChange]);
   useEffect(()=>{void api('/auth/me').then(result=>setUser(result.user)).catch(()=>{});},[]);
   useEffect(()=>{void api('/auth/setup/status').then(result=>{
-    setSetupRequired(!!result.setupRequired);setSetupAvailable(!!result.setupAvailable);
+    setSetupAvailable(!!result.setupAvailable);
     if(result.setupRequired)setMode('initial');
-  }).catch(()=>{}).finally(()=>setSetupChecked(true));},[]);
+  }).catch(()=>{});},[]);
   useEffect(()=>{if(user?.role==='admin')void api('/admin/users').then(result=>setUsers(result.users)).catch(error=>setNotice(error.message));},[user]);
   async function submit(event:FormEvent) {
     event.preventDefault();setBusy(true);setNotice('');
