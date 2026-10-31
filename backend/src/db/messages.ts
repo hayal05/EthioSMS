@@ -5,7 +5,7 @@ import { transaction } from './pool.js';
 
 export interface StoredMessageInput {
   tenantId: string; applicationId: string; idempotencyKey: string; requestHash: string;
-  kind: 'notification' | 'otp' | 'bulk'; encoding?:'GSM-7'|'UTF-16'; payloadCiphertext: string; expiresAt: Date;
+  kind: 'notification' | 'otp' | 'bulk'; encoding?:'GSM-7'|'UTF-16'; mode?:'mock'|'live'; payloadCiphertext: string; expiresAt: Date;
   recipients: {phoneNumber:string; segments:number}[];
 }
 // Internal persistence only. Authentication, validation, encryption, quotas, and dispatch
@@ -18,10 +18,10 @@ export async function storeMessageInTransaction(client:PoolClient,input:StoredMe
   if (!input.recipients.length || input.recipients.length > 20) throw new Error('Recipient count outside pilot batch limit');
     const id = randomUUID();
     const inserted = await client.query<{id:string}>(`INSERT INTO ethiosms.message_jobs
-      (id,tenant_id,application_id,idempotency_key,request_hash,kind,priority,payload_ciphertext,expires_at,encoding)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      (id,tenant_id,application_id,idempotency_key,request_hash,kind,priority,payload_ciphertext,expires_at,encoding,gateway_mode)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
       ON CONFLICT (tenant_id,application_id,idempotency_key) DO NOTHING RETURNING id`,
-      [id,input.tenantId,input.applicationId,input.idempotencyKey,input.requestHash,input.kind,input.kind === 'otp' ? 100 : 0,input.payloadCiphertext,input.expiresAt,input.encoding??null]);
+      [id,input.tenantId,input.applicationId,input.idempotencyKey,input.requestHash,input.kind,input.kind === 'otp' ? 100 : 0,input.payloadCiphertext,input.expiresAt,input.encoding??null,input.mode??'mock']);
     if (!inserted.rowCount) {
       const existing = await client.query<{id:string;request_hash:string}>(`SELECT id,request_hash FROM ethiosms.message_jobs
         WHERE tenant_id=$1 AND application_id=$2 AND idempotency_key=$3`, [input.tenantId,input.applicationId,input.idempotencyKey]);

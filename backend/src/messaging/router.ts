@@ -45,12 +45,14 @@ export function messageRouter(pool:pg.Pool,config:Config,dispatcher?:Dispatcher)
     const to=normalizePhone(body.to),estimate=estimateSegments(body.message);
     const ttl=body.expiresInSeconds??3600;
     if(!Number.isInteger(ttl)||ttl<30||ttl>86400)throw new AccessError(400,'Expiry must be 30–86400 seconds');
+    if(config.gateway==='smsgate'&&body.mockScenario!==undefined)throw new AccessError(400,'Mock scenarios are unavailable for live messages');
+    if(config.gateway==='smsgate'&&!config.liveRecipients.includes(to))throw new AccessError(403,'Recipient is not on the live pilot allowlist');
     const scenario=body.mockScenario??'success';
     if(!mockScenarios.includes(scenario))throw new AccessError(400,'Invalid mock scenario');
     const identity=res.locals.identity as ApiIdentity;
-    const canonical={to,message:body.message,expiresInSeconds:ttl,mockScenario:scenario as MockScenario};
+    const canonical={to,message:body.message,expiresInSeconds:ttl,mockScenario:scenario as MockScenario,mode:config.gateway==='smsgate'?'live':'mock'};
     const id=await reserveMessage(pool,{tenantId:identity.tenant_id,applicationId:identity.application_id,idempotencyKey,
-      requestHash:requestDigest(config.payloadEncryptionKey,canonical),kind:'notification',encoding:estimate.encoding,
+      requestHash:requestDigest(config.payloadEncryptionKey,canonical),kind:'notification',mode:config.gateway==='smsgate'?'live':'mock',encoding:estimate.encoding,
       payloadCiphertext:encryptPayload(config.payloadEncryptionKey,payloadContext(identity.tenant_id,identity.application_id,idempotencyKey),{message:body.message,mockScenario:scenario}),
       expiresAt:new Date(Date.now()+ttl*1000),recipients:[{phoneNumber:to,segments:estimate.segments}]});
     const result=await detail(pool,identity,id);

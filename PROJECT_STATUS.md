@@ -82,3 +82,6 @@ Task 5 validation: local type checks, ten non-database tests, and production bui
 
 ## Task 6 — Dispatch and recovery
 Database claims/leases, bounded retries, conservative unknown outcomes, expiry, per-recipient usage settlement, pause/drain controls, and known-work timers implemented. CI results are recorded in PR #6. No deployment or live sending.
+
+## Task 7 — SMSGate adapter
+Targeted cloud adapter, exact live recipient allowlist, explicit live enablement guards, mode-isolated dispatch, authenticated status reconciliation, last successful API-contact tracking, and phone setup guide implemented. CI uses simulated HTTP. Physical phone/live delivery validation remains pending; no credentials or production infrastructure configured.

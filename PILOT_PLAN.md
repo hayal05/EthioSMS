@@ -141,7 +141,7 @@ Implement tasks sequentially, keep changes reviewable, and update this checklist
 - [x] Task 4: API keys and quotas — implemented and PostgreSQL CI verified (PR #4)
 - [x] Task 5: SMS API and mock gateway — implemented and PostgreSQL CI verified (PR #5)
 - [x] Task 6: Dispatch and recovery
-- [ ] Task 7: Android gateway integration
+- [x] Task 7: Android gateway integration — code/mock verification; physical live test pending
 - [ ] Task 8: OTP service
 - [ ] Task 9: Dashboards
 - [ ] Task 10: Small bulk sends
