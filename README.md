@@ -34,7 +34,7 @@ npm run build
 npm start
 ```
 
-The bootstrap command prints a private 24-hour setup token. Use **I have a setup token** on the site to set the password, then sign in. No default password or public signup exists. `npm run admin:recover -- your_admin_username` is the trusted offline administrator recovery path; keep its token output private. Ordinary-user recovery is in the admin panel.
+For the deployed website, set a private `ADMIN_SETUP_KEY` in the hosting environment before the first administrator exists. Generate a strong value with `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`, add it as a Render environment variable, and redeploy. The site then shows **Create Master Admin** automatically. Enter a username, a password (12–128 characters), confirmation, and the private setup key. Creation is atomic and the server permanently closes this first-admin route once any administrator exists. Do not put the key in frontend variables or commit it. The offline `npm run admin:bootstrap -- your_admin_username` path remains available for trusted database operators; it creates a private 24-hour setup token. `npm run admin:recover -- your_admin_username` remains the trusted offline administrator recovery path. Ordinary-user invitations and recovery remain in the admin panel.
 
 For development run `npm run dev:api` and `npm run dev:web` separately. Vite proxies /api and /health to port 3000; change its proxy if changing the API port.
 
