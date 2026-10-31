@@ -5,6 +5,8 @@ import { transaction } from '../db/pool.js';
 import { digest, token, validUsername, validPassword, hashPassword, verifyPassword } from './security.js';
 import { createAccount } from './accounts.js';
 import type { Dispatcher } from '../messaging/dispatch.js';
+import { dashboardRouter } from '../developer/dashboard.js';
+import type { Config } from '../config.js';
 import { developerRouter } from '../developer/router.js';
 
 interface User { id:string; tenant_id:string; username:string; role:'admin'|'user' }
@@ -15,7 +17,7 @@ function sessionToken(req:Request) {
   const value=parts[0]!.slice(cookieName.length+1);
   return /^[a-f0-9]{64}$/.test(value)?value:undefined;
 }
-export function accountRouter(pool:pg.Pool, production:boolean,dispatcher?:Dispatcher) {
+export function accountRouter(pool:pg.Pool, production:boolean,dispatcher?:Dispatcher,config?:Config) {
   const router=express.Router();
   const cookieOptions={httpOnly:true,secure:production,sameSite:'strict' as const,path:'/'};
   router.use((_req,res,next)=>{res.set('Cache-Control','no-store');next();});
@@ -143,6 +145,7 @@ export function accountRouter(pool:pg.Pool, production:boolean,dispatcher?:Dispa
     if(!dispatcher){res.status(503).json({error:'Dispatcher not configured'});return;}
     res.json(await dispatcher.drain());
   });
+  if(config)router.use(dashboardRouter(pool,config,authenticate,admin,dispatcher));
   router.use(developerRouter(pool,authenticate,admin));
   router.use((error:unknown,_req:Request,res:Response,_next:NextFunction)=>{
     const status=(error as {status?:number})?.status;

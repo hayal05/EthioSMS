@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { developerTests } from './developer.integration.js';
+import { dashboardTests } from './dashboard.integration.js';
 import { otpTests } from './otp.integration.js';
 import { dispatchTests } from './dispatch.integration.js';
 import { messageTests } from './messages.integration.js';
@@ -115,6 +116,7 @@ test('PostgreSQL migrations, isolation, rollback, and persistent messages', { sk
     await messageTests(pool,t);
     await dispatchTests(pool,t);
     await otpTests(pool,t);
+    await dashboardTests(pool,t);
     await t.test('edited history is rejected and failed migration is fully rolled back', async () => {
       const directory = await mkdtemp(join(tmpdir(),'ethiosms-migrations-'));
       const migrations = await readMigrations();
