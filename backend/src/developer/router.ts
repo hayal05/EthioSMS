@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type pg from 'pg';
 import type { Config } from '../config.js';
 import type { Dispatcher } from '../messaging/dispatch.js';
+import { otpRouter } from '../messaging/otp.js';
 import { messageRouter } from '../messaging/router.js';
 import { transaction } from '../db/pool.js';
 import { AccessError,uuid,validScopes } from './common.js';
@@ -102,6 +103,7 @@ export function apiRouter(pool:pg.Pool,config:Config,dispatcher?:Dispatcher) {
     const identity=await authenticateKey(pool,authorization.startsWith('Bearer ')?authorization.slice(7):undefined,'usage:read');
     await enforceApiRate(pool,identity);res.json(await usage(pool,identity.tenant_id,identity.application_id));
   });
+  router.use('/otp',otpRouter(pool,config,dispatcher));
   router.use('/messages',messageRouter(pool,config,dispatcher));
   router.use((_req,res)=>{res.status(404).json({error:'Endpoint not available'});});
   router.use(safeError);return router;

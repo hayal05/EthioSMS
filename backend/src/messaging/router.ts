@@ -41,7 +41,7 @@ export function messageRouter(pool:pg.Pool,config:Config,dispatcher?:Dispatcher)
     const body=req.body;
     if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(key=>!['to','message','expiresInSeconds','mockScenario'].includes(key)))throw new AccessError(400,'Unsupported message fields');
     const idempotencyKey=req.get('Idempotency-Key');
-    if(!idempotencyKey||!/^[A-Za-z0-9._:-]{1,128}$/.test(idempotencyKey))throw new AccessError(400,'A valid Idempotency-Key header is required');
+    if(!idempotencyKey||idempotencyKey.startsWith('otp:')||idempotencyKey.startsWith('bulk:')||!/^[A-Za-z0-9._:-]{1,128}$/.test(idempotencyKey))throw new AccessError(400,'A valid Idempotency-Key header is required');
     const to=normalizePhone(body.to),estimate=estimateSegments(body.message);
     const ttl=body.expiresInSeconds??3600;
     if(!Number.isInteger(ttl)||ttl<30||ttl>86400)throw new AccessError(400,'Expiry must be 30–86400 seconds');

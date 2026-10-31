@@ -85,3 +85,6 @@ Database claims/leases, bounded retries, conservative unknown outcomes, expiry, 
 
 ## Task 7 — SMSGate adapter
 Targeted cloud adapter, exact live recipient allowlist, explicit live enablement guards, mode-isolated dispatch, authenticated status reconciliation, last successful API-contact tracking, and phone setup guide implemented. CI uses simulated HTTP. Physical phone/live delivery validation remains pending; no credentials or production infrastructure configured.
+
+## Task 8 — OTP service
+Purpose/application-bound single-use challenges, cryptographic six-digit codes, independent keyed digests, encrypted queued payloads, expiry/cooldown/attempt limits, recipient/IP limits, atomic quota integration and supersession implemented. Codes never appear in API responses. Queued payloads are erased on settlement/verification exhaustion. CI includes lifecycle and concurrent verification tests.

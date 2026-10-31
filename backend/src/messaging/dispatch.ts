@@ -11,7 +11,7 @@ export interface Gateway {
  status(request:{scenario:MockScenario;submittedAt:number;providerId:string}):Promise<'accepted'|'sent'|'delivered'|'unknown'|'failed'>;
 }
 export async function settleRecipient(client:PoolClient,id:string,consume:boolean){
-  const result=await client.query(`SELECT r.*,j.application_id,v.usage_date FROM ethiosms.message_recipients r
+  const result=await client.query(`SELECT r.*,j.application_id,j.kind,v.usage_date FROM ethiosms.message_recipients r
     JOIN ethiosms.message_jobs j ON j.id=r.job_id AND j.tenant_id=r.tenant_id
     JOIN ethiosms.usage_reservations v ON v.job_id=j.id AND v.tenant_id=j.tenant_id
     WHERE r.id=$1 FOR UPDATE OF r`,[id]);
@@ -22,6 +22,7 @@ export async function settleRecipient(client:PoolClient,id:string,consume:boolea
     if(!changed.rowCount)throw new Error('Usage invariant failed');
   }
   await client.query('UPDATE ethiosms.message_recipients SET usage_settled=true WHERE id=$1',[id]);
+  if(row.kind==='otp')await client.query("UPDATE ethiosms.message_jobs SET payload_ciphertext='' WHERE id=$1",[row.job_id]);
   await client.query(`UPDATE ethiosms.usage_reservations SET state=CASE WHEN EXISTS(SELECT 1 FROM ethiosms.message_recipients WHERE job_id=$1 AND status IN ('accepted','sent','delivered','unknown')) THEN 'consumed' ELSE 'released' END
     WHERE job_id=$1 AND NOT EXISTS(SELECT 1 FROM ethiosms.message_recipients WHERE job_id=$1 AND NOT usage_settled)`,[row.job_id]);
 }
@@ -41,8 +42,8 @@ export class Dispatcher {
       const item=await transaction(this.pool,async client=>{
         const settings=(await client.query('SELECT sending_paused FROM ethiosms.settings WHERE singleton FOR SHARE')).rows[0];
         if(settings.sending_paused)return undefined;
-        const result=await client.query(`SELECT r.*,j.application_id,j.idempotency_key,j.payload_ciphertext,j.expires_at,j.gateway_mode,j.priority,
-          EXISTS(SELECT 1 FROM ethiosms.applications a JOIN ethiosms.tenants t ON t.id=a.tenant_id JOIN ethiosms.users u ON u.tenant_id=t.id WHERE a.id=j.application_id AND a.enabled AND t.enabled AND u.enabled) AS active
+        const result=await client.query(`SELECT r.*,j.application_id,j.idempotency_key,j.payload_ciphertext,j.expires_at,j.gateway_mode,j.priority,j.kind,
+          EXISTS(SELECT 1 FROM ethiosms.applications a JOIN ethiosms.tenants t ON t.id=a.tenant_id JOIN ethiosms.users u ON u.tenant_id=t.id WHERE a.id=j.application_id AND a.enabled AND t.enabled AND u.enabled) AND (j.kind<>'otp' OR EXISTS(SELECT 1 FROM ethiosms.otp_challenges o WHERE o.job_id=j.id AND o.consumed_at IS NULL AND o.superseded_at IS NULL AND o.expires_at>now() AND o.attempts<o.max_attempts)) AS active
           FROM ethiosms.message_recipients r JOIN ethiosms.message_jobs j ON j.id=r.job_id AND j.tenant_id=r.tenant_id
           WHERE j.gateway_mode=$1 AND ((r.status='queued' AND (r.available_at<=now() OR j.expires_at<=now())) OR (r.status='claimed' AND r.lease_expires_at<=now()) OR (r.status IN ('accepted','sent') AND r.reconcile_at<=now()))
           ORDER BY j.priority DESC,r.available_at,r.id FOR UPDATE OF r SKIP LOCKED LIMIT 1`,[this.mode]);
@@ -66,7 +67,7 @@ export class Dispatcher {
       if('done' in item)continue;
       const row=item as Record<string,any>;
       let payload:{message:string;mockScenario:MockScenario};
-      try{payload=decryptPayload(this.key,payloadContext(row.tenant_id,row.application_id,row.idempotency_key),row.payload_ciphertext) as typeof payload;if(typeof payload.message!=='string')throw Error();}
+      try{payload=row.kind==='otp'&&row.status!=='queued'?{message:'',mockScenario:'success'}:decryptPayload(this.key,payloadContext(row.tenant_id,row.application_id,row.idempotency_key),row.payload_ciphertext) as typeof payload;if(typeof payload.message!=='string')throw Error();}
       catch{if(row.status==='queued')await this.finish(row,{outcome:'rejected',code:'PAYLOAD_UNAVAILABLE'});else await this.pool.query("UPDATE ethiosms.message_recipients SET status='unknown',reconcile_at=NULL,last_error_code='PAYLOAD_UNAVAILABLE' WHERE id=$1 AND status IN ('accepted','sent')",[row.id]);continue;}
       if(row.status==='queued'){
         let result:MockResult;
