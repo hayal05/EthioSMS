@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { initialAdminTests } from './initial-admin.integration.js';
 import { developerTests } from './developer.integration.js';
 import { maintenanceTests } from './maintenance.integration.js';
 import { campaignTests } from './campaign.integration.js';
@@ -38,6 +39,7 @@ test('PostgreSQL migrations, isolation, rollback, and persistent messages', { sk
       const defaults = await pool.query('SELECT sending_paused FROM ethiosms.settings');
       assert.equal(defaults.rows[0].sending_paused, true);
     });
+    await initialAdminTests(pool,t);
     const tenant = randomUUID(), otherTenant = randomUUID(), application = randomUUID(), otherApp = randomUUID();
     await pool.query('INSERT INTO ethiosms.tenants(id,name) VALUES ($1,$2),($3,$4)',[tenant,'First',otherTenant,'Second']);
     await pool.query('INSERT INTO ethiosms.applications(id,tenant_id,name) VALUES ($1,$2,$3),($4,$5,$6)',[application,tenant,'ERP',otherApp,otherTenant,'Other']);

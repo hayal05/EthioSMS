@@ -29,12 +29,11 @@ Open http://localhost:3000. Without a database, the public shell and liveness wo
 
 ```sh
 npm run db:migrate
-npm run admin:bootstrap -- your_admin_username
 npm run build
 npm start
 ```
 
-For the deployed website, set a private `ADMIN_SETUP_KEY` in the hosting environment before the first administrator exists. Generate a strong value with `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`, add it as a Render environment variable, and redeploy. The site then shows **Create Master Admin** automatically. Enter a username, a password (12–128 characters), confirmation, and the private setup key. Creation is atomic and the server permanently closes this first-admin route once any administrator exists. Do not put the key in frontend variables or commit it. The offline `npm run admin:bootstrap -- your_admin_username` path remains available for trusted database operators; it creates a private 24-hour setup token. `npm run admin:recover -- your_admin_username` remains the trusted offline administrator recovery path. Ordinary-user invitations and recovery remain in the admin panel.
+On an empty installation, open the website and create the master admin with **email, password and confirm password**. The first account is automatically the master admin and is signed in immediately. No setup key, username or invitation token is required for this first account. Registration closes permanently once any account exists, including disabled/legacy accounts; existing installations keep their current administrator. Sign in with the administrator email, or a legacy username for existing users. The trusted offline bootstrap/recovery commands remain available for operators; ordinary users still use administrator invitations. Apply migration `010_master_admin_email.sql` before using the new form.
 
 For development run `npm run dev:api` and `npm run dev:web` separately. Vite proxies /api and /health to port 3000; change its proxy if changing the API port.
 
