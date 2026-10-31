@@ -136,8 +136,8 @@ Implement tasks sequentially, keep changes reviewable, and update this checklist
 ## Progress
 
 - [x] Task 1: Foundation — implemented and CI verified (PR #1)
-- [ ] Task 2: Database
-- [ ] Task 3: Invited users
+- [x] Task 2: Database — implemented and PostgreSQL CI verified (PR #2)
+- [x] Task 3: Invited users — implemented and PostgreSQL CI verified (PR #3)
 - [ ] Task 4: API keys and quotas
 - [ ] Task 5: SMS API and mock gateway
 - [ ] Task 6: Dispatch and recovery

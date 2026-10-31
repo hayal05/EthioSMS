@@ -4,7 +4,7 @@ SMS gateway platform for ERP systems, websites, and locally developed applicatio
 
 ## Status
 
-Task 1 foundation implemented: TypeScript Express backend, React/Vite dashboard shell, validated configuration, protected readiness, and CI. Database migrations and internal message persistence are now implemented in Task 2. Accounts and messaging endpoints are pending. No live SMS sending is enabled.
+Task 1 foundation implemented: TypeScript Express backend, React/Vite dashboard shell, validated configuration, protected readiness, and CI. Database migrations and internal message persistence are now implemented in Task 2. Invite-only accounts are implemented in Task 3. Messaging endpoints are pending. No live SMS sending is enabled.
 
 ## Planned features
 
@@ -72,7 +72,7 @@ Open http://localhost:3000. For development, run `npm run dev:api` and `npm run 
 - `.env` is read by backend start/development scripts; production environment variables can also be supplied by the hosting provider. Never put readiness or gateway credentials in frontend `VITE_*` variables.
 - `npm run check` runs TypeScript checks, backend integration tests, and production builds. CI runs the same command after `npm ci`.
 
-The dashboard is a public foundation status page, not an authenticated customer dashboard. It displays no account, message, or recipient data. The built dashboard and API share one server process. Database setup is documented below; sending, authentication, and deployment arrive in later tasks from [PILOT_PLAN.md](PILOT_PLAN.md).
+The landing page displays public foundation status. The account panel loads private information only after session authentication; message and recipient data are not yet displayed. The built dashboard and API share one server process. Database setup is documented below; sending and deployment arrive in later tasks from [PILOT_PLAN.md](PILOT_PLAN.md).
 
 ## Database foundation (Task 2)
 
@@ -96,3 +96,38 @@ The `ethiosms` schema stores tenant accounts, users, applications, hashed API ke
 CI provisions a disposable PostgreSQL 17 database and requires the database tests. For local database tests, explicitly set `TEST_DATABASE_URL` to a disposable localhost PostgreSQL database whose name ends in `_test`, and set `REQUIRE_DATABASE_TESTS=true`, then run `npm run check`. These tests **drop the EthioSMS test schema and migration ledger**. Never point them at an application database. Without this test URL, only the database integration suite is skipped locally.
 
 Tests cover concurrent migration runners, repeat migrations, checksums, transactional rollback, tenant/application boundaries, duplicate requests, invalid recipient rollback, and recovery after closing/reopening all application connections. Database server restart recovery is part of later deployment validation.
+
+## Invited accounts (Task 3)
+
+After configuring a private database and applying migrations, bootstrap the first administrator from a trusted terminal:
+
+```sh
+npm run db:migrate
+npm run admin:bootstrap -- your_admin_username
+```
+
+The command creates the administrator only if none exists and prints a **private one-time setup token**, not a default password. Open the site, choose **I have a setup token**, and set a password of 12–128 characters. Sign in using the username and password. Do not run bootstrap in public build logs or share its output. No public signup is provided.
+
+An administrator can create an invited username in the account panel and share its token privately. Tokens expire after 24 hours and are usable once; only their hashes are stored. Each invited account gets its own tenant. The administrator can disable/re-enable users or issue a recovery token; disabling or recovery revokes existing sessions immediately. Recovery also invalidates the previous password and previous setup tokens. Disabling a tenant blocks authentication. Password setup does not automatically sign the user in.
+
+Sessions expire after 8 hours and use HttpOnly, SameSite=Strict cookies; production cookies are Secure and require HTTPS. Login throttles are persisted in PostgreSQL (30 attempts/IP and 10/username per 15-minute window); setup attempts are limited to 20/IP per window. Keep `TRUST_PROXY_HOPS=0` for direct local access; use `1` only when traffic must pass through one trusted reverse proxy such as Render. This determines which IP is used by throttling. No CORS is enabled. Cookie-authenticated mutations require `X-EthioSMS-Request: 1` to block cross-site form requests.
+
+### Account API
+
+| Method/path | Access | Purpose |
+|---|---|---|
+| POST `/api/auth/setup` | Setup token | JSON `token`, `password`; consume token and set password |
+| POST `/api/auth/login` | Username/password | JSON `username`, `password`; sets session cookie |
+| GET `/api/auth/me` | Session | Current user's safe identity |
+| POST `/api/auth/logout` | Session cookie, if present | Revoke session and clear cookie |
+| GET `/api/admin/users` | Admin | Latest 100 users, without credentials |
+| POST `/api/admin/users` | Admin | JSON `username`; returns setup token once |
+| PATCH `/api/admin/users/:id` | Admin | JSON boolean `enabled`; regular users only |
+| POST `/api/admin/users/:id/recovery` | Admin | Revoke access and issue replacement setup token |
+| PATCH `/api/admin/applications/:id` | Admin | JSON boolean `enabled`; application creation/API keys arrive in Task 4 |
+
+All mutation requests require the custom header. Browser requests include it automatically in the account panel. Credentials are never returned by user-list or session endpoints. Administrators can manage regular users across tenants; ordinary users cannot access admin endpoints. Tenant-scoped application/message APIs are introduced in later tasks.
+
+### Administrator recovery
+
+If the administrator loses access, the trusted operator with private database access can run `npm run admin:recover -- your_admin_username`. This resets only the named administrator, revokes sessions, invalidates the old password and setup tokens, enables the account, and prints a new 24-hour setup token. Keep output private. Ordinary-user recovery uses the administrator panel instead. Expired sessions, tokens, and rate-limit buckets are retained until cleanup in Task 12; monitor database storage during the pilot.

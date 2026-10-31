@@ -6,7 +6,7 @@ import { databaseReady } from './db/migrations.js';
 try {
   const config = loadConfig();
   const database = config.databaseUrl ? createDatabase(config.databaseUrl) : undefined;
-  const server = createApp(config, undefined, database ? () => databaseReady(database) : undefined).listen(config.port, '0.0.0.0', () => {
+  const server = createApp(config, undefined, database ? () => databaseReady(database) : undefined, database).listen(config.port, '0.0.0.0', () => {
     console.info(`EthioSMS listening on port ${config.port}; mock gateway; SMS disabled`);
   });
   server.on('error', () => { console.error('Server failed to listen'); process.exitCode = 1; });

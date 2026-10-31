@@ -1,11 +1,15 @@
 import assert from 'node:assert/strict';
+import request from 'supertest';
+import { createApp } from '../src/app.js';
+import { loadConfig } from '../src/config.js';
+import { createAccount, recoverAdmin } from '../src/auth/accounts.js';
 import { test } from 'node:test';
 import { randomUUID } from 'node:crypto';
 import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createDatabase } from '../src/db/pool.js';
-import { migrate, databaseReady, migrationDirectory } from '../src/db/migrations.js';
+import { migrate, databaseReady, migrationDirectory, readMigrations } from '../src/db/migrations.js';
 import { storeMessage, getMessage, type StoredMessageInput } from '../src/db/messages.js';
 
 const url = process.env.TEST_DATABASE_URL;
@@ -21,7 +25,7 @@ test('PostgreSQL migrations, isolation, rollback, and persistent messages', { sk
     await reset();
     await t.test('concurrent fresh migrations apply once and readiness validates history', async () => {
       const applied = await Promise.all([migrate(pool),migrate(pool)]);
-      assert.equal(applied.flat().length, 1);
+      assert.equal(applied.flat().length, (await readMigrations()).length);
       assert.deepEqual(await migrate(pool), []);
       assert.equal(await databaseReady(pool), true);
       const defaults = await pool.query('SELECT sending_paused FROM ethiosms.settings');
@@ -56,14 +60,63 @@ test('PostgreSQL migrations, isolation, rollback, and persistent messages', { sk
       assert.equal(rows[0].phone_number,'+251900000001');
       assert.equal(await databaseReady(pool), true);
     });
+    await t.test('invites, sessions, roles, recovery, expiry, and disabling accounts', async () => {
+      const app=createApp(loadConfig({}),'/nonexistent',undefined,pool);
+      const admin=await createAccount(pool,'pilot_admin',undefined,true);
+      await assert.rejects(createAccount(pool,'second_admin',undefined,true),/already exists/);
+      const header={'X-EthioSMS-Request':'1'};
+      const password='a sufficiently long password';
+      await request(app).post('/api/auth/setup').send({token:admin.setupToken,password}).expect(403);
+      await request(app).post('/api/auth/setup').set(header).send({token:admin.setupToken,password}).expect(200);
+      await request(app).post('/api/auth/setup').set(header).send({token:admin.setupToken,password}).expect(400);
+      const adminAgent=request.agent(app);
+      const login=await adminAgent.post('/api/auth/login').set(header).send({username:'pilot_admin',password}).expect(200);
+      assert.equal(login.body.user.role,'admin');
+      assert.ok(!JSON.stringify(login.body).includes('password_hash'));
+      assert.match(String(login.headers['set-cookie']),/HttpOnly/);
+      assert.match(String(login.headers['set-cookie']),/SameSite=Strict/);
+      await adminAgent.patch(`/api/admin/applications/${application}`).set(header).send({enabled:true}).expect(200);
+      const invite=await adminAgent.post('/api/admin/users').set(header).send({username:'invited_one'}).expect(201);
+      const second=await adminAgent.post('/api/admin/users').set(header).send({username:'invited_two'}).expect(201);
+      const stored=await pool.query('SELECT token_hash FROM ethiosms.setup_tokens WHERE user_id=$1',[invite.body.id]);
+      assert.notEqual(stored.rows[0].token_hash,invite.body.setupToken);
+      await request(app).post('/api/auth/setup').set(header).send({token:invite.body.setupToken,password}).expect(200);
+      const user=request.agent(app);
+      await user.post('/api/auth/login').set(header).send({username:'invited_one',password}).expect(200);
+      await user.get('/api/admin/users').expect(403);
+      await user.patch(`/api/admin/applications/${application}`).set(header).send({enabled:false}).expect(403);
+      await user.post('/api/admin/users').set(header).send({username:'not_allowed'}).expect(403);
+      await user.patch(`/api/admin/users/${second.body.id}`).set(header).send({enabled:false}).expect(403);
+      const disabled=await adminAgent.patch(`/api/admin/users/${invite.body.id}`).set(header).send({enabled:false}).expect(200);
+      await user.get('/api/auth/me').expect(401);
+      await user.post('/api/auth/login').set(header).send({username:'invited_one',password}).expect(401);
+      await adminAgent.patch(`/api/admin/users/${invite.body.id}`).set(header).send({enabled:true}).expect(200);
+      await user.post('/api/auth/login').set(header).send({username:'invited_one',password}).expect(200);
+      const recovery=await adminAgent.post(`/api/admin/users/${invite.body.id}/recovery`).set(header).expect(200);
+      await user.get('/api/auth/me').expect(401);
+      await user.post('/api/auth/login').set(header).send({username:'invited_one',password}).expect(401);
+      await request(app).post('/api/auth/setup').set(header).send({token:recovery.body.setupToken,password:'a different long password'}).expect(200);
+      await user.post('/api/auth/login').set(header).send({username:'invited_one',password:'a different long password'}).expect(200);
+      await user.post('/api/auth/logout').set(header).expect(204);
+      await user.get('/api/auth/me').expect(401);
+      await pool.query("UPDATE ethiosms.setup_tokens SET created_at=now()-interval '2 days',expires_at=now()-interval '1 day' WHERE user_id=$1",[second.body.id]);
+      await request(app).post('/api/auth/setup').set(header).send({token:second.body.setupToken,password}).expect(400);
+      // Unknown and disabled users share the same login response, and repeated attempts are limited.
+      for(let i=0;i<10;i++)await request(app).post('/api/auth/login').set(header).send({username:'absent_user',password:'wrong'}).expect(401);
+      await request(app).post('/api/auth/login').set(header).send({username:'absent_user',password:'wrong'}).expect(429);
+      await recoverAdmin(pool,'pilot_admin');
+      await adminAgent.get('/api/auth/me').expect(401);
+    });
     await t.test('edited history is rejected and failed migration is fully rolled back', async () => {
       const directory = await mkdtemp(join(tmpdir(),'ethiosms-migrations-'));
-      const original = await readFile(join(migrationDirectory,'001_initial.sql'),'utf8');
+      const migrations = await readMigrations();
+      for (const item of migrations) await writeFile(join(directory,item.name),item.sql);
+      const original = migrations[0]!.sql;
       try {
         await writeFile(join(directory,'001_initial.sql'),original+'\n-- changed');
         await assert.rejects(migrate(pool,directory),/history differs/);
         await writeFile(join(directory,'001_initial.sql'),original);
-        await writeFile(join(directory,'002_failure.sql'),'CREATE TABLE ethiosms.rollback_probe(id int); SELECT * FROM ethiosms.missing_table;');
+        await writeFile(join(directory,'999_failure.sql'),'CREATE TABLE ethiosms.rollback_probe(id int); SELECT * FROM ethiosms.missing_table;');
         await assert.rejects(migrate(pool,directory),{code:'42P01'});
         const probe = await pool.query("SELECT to_regclass('ethiosms.rollback_probe') AS relation");
         assert.equal(probe.rows[0].relation,null);
