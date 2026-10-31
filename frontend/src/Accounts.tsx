@@ -22,7 +22,7 @@ export function Accounts({onSessionChange}:{onSessionChange?:(signedIn:boolean)=
       if(mode==='initial'){
         if(password!==confirmPassword)throw new Error('Passwords do not match');
         await api('/auth/setup/initial','POST',{username:username.toLowerCase(),password,setupKey});
-        setSetupKey('');setConfirmPassword('');setPassword('');setMode('login');setSetupRequired(false);
+        setSetupKey('');setConfirmPassword('');setPassword('');setMode('login');
         setNotice('Master Admin created successfully. Sign in with your new credentials.');
       } else if(mode==='token'){
         await api('/auth/setup','POST',{token:setupToken,password});setSetupToken('');setMode('login');setNotice('Password set. Sign in to continue.');
