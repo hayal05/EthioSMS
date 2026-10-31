@@ -4,7 +4,7 @@ SMS gateway platform for ERP systems, websites, and locally developed applicatio
 
 ## Status
 
-Repository initialized with the project scope. Application implementation and deployment have not started. No live SMS sending is enabled.
+Task 1 foundation implemented: TypeScript Express backend, React/Vite dashboard shell, validated configuration, protected readiness, and CI. Database integration, accounts, and messaging are pending. No live SMS sending is enabled.
 
 ## Planned features
 
@@ -49,3 +49,27 @@ SMS Gateway for Android's standard private server requires MySQL/MariaDB, so Neo
 ## Operational requirements
 
 Use HTTPS, keep credentials out of source control, and redact OTPs and secrets from logs. Confirm operator permission and package coverage before automated commercial sending. A personal unlimited SMS package alone does not establish permission to operate a public messaging service. Measure actual throughput and reliability on the selected phone and network.
+
+## Run the foundation
+
+Requires Node.js 22.12+ and npm. From the repository root:
+
+```sh
+npm ci
+cp .env.example .env
+npm run check
+npm run build
+npm start
+```
+
+Open http://localhost:3000. For development, run `npm run dev:api` and `npm run dev:web` in separate terminals; Vite proxies API/health requests to port 3000. If you change the API port, update the development proxy too.
+
+### Health and configuration
+
+- `GET /health`: public liveness, with no database or phone access. Use this for uptime checks.
+- `GET /api/ready`: requires `Authorization: Bearer <READINESS_TOKEN>`. Configure a private random token of at least 32 characters; it is mandatory with `NODE_ENV=production`. This endpoint describes foundation readiness only, not database or phone readiness.
+- `SMS_GATEWAY=mock` and `SMS_ENABLED=false` are the only supported values. Enabling real sending fails startup in this release. No send endpoint is exposed yet.
+- `.env` is read by backend start/development scripts; production environment variables can also be supplied by the hosting provider. Never put readiness or gateway credentials in frontend `VITE_*` variables.
+- `npm run check` runs TypeScript checks, backend integration tests, and production builds. CI runs the same command after `npm ci`.
+
+The dashboard is a public foundation status page, not an authenticated customer dashboard. It displays no account, message, or recipient data. The built dashboard and API share one server process. Database, sending, authentication, and deployment arrive in later tasks from [PILOT_PLAN.md](PILOT_PLAN.md).
