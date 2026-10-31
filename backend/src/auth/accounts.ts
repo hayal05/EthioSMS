@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type pg from 'pg';
 import { transaction } from '../db/pool.js';
-import { digest, token, validUsername } from './security.js';
+import { digest, token, validUsername, validPassword, hashPassword } from './security.js';
 
 export async function createAccount(pool:pg.Pool, username:string, actor?:{tenantId:string;id:string}, bootstrap=false) {
   if (!validUsername(username)) throw new Error('Invalid username');
@@ -24,6 +24,23 @@ export async function createAccount(pool:pg.Pool, username:string, actor?:{tenan
     return {id:userId,username,setupToken,expiresInHours:24};
   });
 }
+// Creates the first administrator with a password in one atomic transaction.
+// The same advisory lock is used by the offline bootstrap command to prevent races.
+export async function createInitialAdmin(pool:pg.Pool, username:string, password:string) {
+  if (!validUsername(username) || !validPassword(password)) throw new Error('Invalid initial administrator details');
+  const passwordHash=await hashPassword(password);
+  return transaction(pool, async client => {
+    await client.query('SELECT pg_advisory_xact_lock(174962, 2)');
+    const existing=await client.query("SELECT 1 FROM ethiosms.users WHERE role='admin' LIMIT 1");
+    if(existing.rowCount) throw new Error('Administrator already exists');
+    const tenantId=randomUUID(),userId=randomUUID();
+    await client.query('INSERT INTO ethiosms.tenants(id,name,enabled) VALUES ($1,$2,true)',[tenantId,username]);
+    await client.query("INSERT INTO ethiosms.users(id,tenant_id,username,role,enabled,password_hash) VALUES ($1,$2,$3,'admin',true,$4)",[userId,tenantId,username,passwordHash]);
+    await client.query("INSERT INTO ethiosms.audit_events(id,tenant_id,actor_user_id,action,resource_id) VALUES ($1,$2,$3,'admin.initial_setup',$4)",[randomUUID(),tenantId,userId,userId]);
+    return {id:userId,username,role:'admin' as const};
+  });
+}
+
 // This offline recovery function is for the administrator with database-host access.
 export async function recoverAdmin(pool:pg.Pool, username:string) {
   if (!validUsername(username)) throw new Error('Invalid username');
