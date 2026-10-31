@@ -149,6 +149,9 @@
                 }
               }
             }
+          },
+          "410": {
+            "description": "Retained request identity exists but message/challenge history expired; do not resend"
           }
         },
         "requestBody": {
@@ -802,6 +805,9 @@
                 }
               }
             }
+          },
+          "410": {
+            "description": "Retained request identity exists but message/challenge history expired; do not resend"
           }
         },
         "requestBody": {

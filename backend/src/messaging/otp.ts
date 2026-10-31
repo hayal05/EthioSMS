@@ -33,6 +33,8 @@ export function otpRouter(pool:pg.Pool,config:Config,dispatcher?:Dispatcher){
       await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[`${identity.application_id}:${to}:${purpose}`]);
       const replay=(await client.query('SELECT id,expires_at,request_hash FROM ethiosms.otp_challenges WHERE tenant_id=$1 AND application_id=$2 AND request_key=$3',[identity.tenant_id,identity.application_id,key])).rows[0];
       if(replay){if(replay.request_hash!==fingerprint)throw new AccessError(409,'Conflicting OTP request');return {id:replay.id,expiresAt:replay.expires_at};}
+      const oldRequest=await client.query('SELECT message_id FROM ethiosms.request_history WHERE tenant_id=$1 AND application_id=$2 AND idempotency_key=$3',[identity.tenant_id,identity.application_id,`otp:${digest(key)}`]);
+      if(oldRequest.rowCount)throw new AccessError(410,'OTP request history expired; start a new event');
       const previous=(await client.query('SELECT * FROM ethiosms.otp_challenges WHERE tenant_id=$1 AND application_id=$2 AND phone_number=$3 AND purpose=$4 ORDER BY created_at DESC LIMIT 1 FOR UPDATE',[identity.tenant_id,identity.application_id,to,purpose])).rows[0];
       if(previous&&Date.now()-new Date(previous.created_at).getTime()<config.otpCooldown*1000)throw new AccessError(429,'Wait before requesting another code');
       const recent=(await client.query("SELECT count(*) FROM ethiosms.otp_challenges WHERE tenant_id=$1 AND application_id=$2 AND phone_number=$3 AND created_at>now()-interval '15 minutes'",[identity.tenant_id,identity.application_id,to])).rows[0];

@@ -25,6 +25,8 @@ export async function otpTests(pool:pg.Pool,t:TestContext){
     const results=await Promise.all([verify(id,'login',code),verify(id,'login',code)]);assert.equal(results.filter(r=>r.body.verified).length,1);
     assert.equal((await verify(id,'login',code).expect(200)).body.verified,false);
     const payload=(await pool.query('SELECT payload_ciphertext FROM ethiosms.message_jobs WHERE id=(SELECT job_id FROM ethiosms.otp_challenges WHERE id=$1)',[id])).rows[0];assert.equal(payload.payload_ciphertext,'');
+    await pool.query('DELETE FROM ethiosms.otp_challenges WHERE id=$1',[id]);
+    await create('login',requestId).expect(410);
   });
   await t.test('superseded, expired and exhausted challenges cannot verify',async()=>{
     const first=await create('reset').expect(202),oldId=first.body.challengeId,oldCode=await codeFor(oldId);

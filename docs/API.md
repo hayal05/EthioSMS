@@ -59,3 +59,6 @@ No existing ERP repository is modified. Contact consent, correct account/phone m
 ## Workspace management
 
 Cookie-authenticated management routes require `X-EthioSMS-Request: 1` for mutations and do not accept bearer keys as administrator sessions. Use the UI for invites, application approval, key rotation/revocation, quotas, campaigns and opt-outs. Key rotation revokes the old key immediately. Campaign approval is mandatory; automatic inbound STOP processing is not configured.
+
+## Retention and old retries
+Message content/history expires under the configured retention policy. Opaque request identities are retained separately so replay after cleanup returns **410 Gone** instead of generating a duplicate SMS. Start a genuinely new business event with a new ID; never replace an uncertain old event merely to bypass 410. Use opaque event IDs, not phone numbers, employee names or other sensitive data in Idempotency-Key. Expired OTP request metadata likewise cannot be reused to generate a new challenge under the old event ID.

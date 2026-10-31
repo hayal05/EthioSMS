@@ -36,3 +36,5 @@ Pause dispatch; record the running commit, migration ledger and affected message
 ## Monitoring
 
 Logs intentionally omit bodies, phone numbers, secrets and raw provider/DB errors. Review safe failure codes, queue counts, reserved/used segments, DB storage/compute, and last successful gateway API contact. That contact is not proof the device is online. Protect Render/Neon/GitHub accounts and server environment access. No incoming SMS webhook/automatic STOP endpoint is exposed; record campaign opt-outs manually.
+
+A minimal opaque request-history ledger is retained beyond message purging to prevent old retries from resending. It contains tenant/application IDs, opaque event key, keyed fingerprint, original message UUID and timestamp, not message content. Include it in backups. Do not delete it or replay old outbox events after restore without reconciliation. API callers should never put personal data in event keys.
