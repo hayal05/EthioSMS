@@ -6,6 +6,7 @@ import { authenticateKey,enforceApiRate,type ApiIdentity } from '../developer/ke
 import { reserveMessage } from '../developer/quotas.js';
 import { estimateSegments } from './segments.js';
 import { encryptPayload,requestDigest,payloadContext } from './crypto.js';
+import type { Dispatcher } from './dispatch.js';
 import { mockScenarios,type MockScenario } from './mock.js';
 
 const combinedStatus=(statuses:string[])=>statuses.length===1?statuses[0]!:statuses.length?'mixed':'unknown';
@@ -27,7 +28,7 @@ async function detail(pool:pg.Pool,identity:ApiIdentity,id:string){
   return {id:job.id,kind:job.kind,encoding:job.encoding,mode:job.gateway_mode,createdAt:job.created_at,expiresAt:job.expires_at,
     status:combinedStatus([...new Set(recipients.map(row=>row.status as string))]),totalSegments:recipients.reduce((sum,row)=>sum+row.segments,0),recipients:recipients.map(row=>({id:row.id,to:mask(row.phone_number),segments:row.segments,status:row.status,errorCode:row.last_error_code}))};
 }
-export function messageRouter(pool:pg.Pool,config:Config){
+export function messageRouter(pool:pg.Pool,config:Config,dispatcher?:Dispatcher){
   const router=express.Router();
   const guard=(scope:Scope)=>async(req:Request,res:Response,next:NextFunction)=>{
     const auth=req.get('Authorization')??'';
@@ -53,7 +54,7 @@ export function messageRouter(pool:pg.Pool,config:Config){
       payloadCiphertext:encryptPayload(config.payloadEncryptionKey,payloadContext(identity.tenant_id,identity.application_id,idempotencyKey),{message:body.message,mockScenario:scenario}),
       expiresAt:new Date(Date.now()+ttl*1000),recipients:[{phoneNumber:to,segments:estimate.segments}]});
     const result=await detail(pool,identity,id);
-    res.location(`/api/v1/messages/${id}`).status(202).json(result);
+    res.location(`/api/v1/messages/${id}`).status(202).json(result);dispatcher?.kick();
   });
   router.get('/',guard('messages:read'),async(req,res)=>{
     const raw=req.query.limit??'20';

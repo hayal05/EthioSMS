@@ -4,6 +4,7 @@ import type pg from 'pg';
 import { transaction } from '../db/pool.js';
 import { digest, token, validUsername, validPassword, hashPassword, verifyPassword } from './security.js';
 import { createAccount } from './accounts.js';
+import type { Dispatcher } from '../messaging/dispatch.js';
 import { developerRouter } from '../developer/router.js';
 
 interface User { id:string; tenant_id:string; username:string; role:'admin'|'user' }
@@ -14,7 +15,7 @@ function sessionToken(req:Request) {
   const value=parts[0]!.slice(cookieName.length+1);
   return /^[a-f0-9]{64}$/.test(value)?value:undefined;
 }
-export function accountRouter(pool:pg.Pool, production:boolean) {
+export function accountRouter(pool:pg.Pool, production:boolean,dispatcher?:Dispatcher) {
   const router=express.Router();
   const cookieOptions={httpOnly:true,secure:production,sameSite:'strict' as const,path:'/'};
   router.use((_req,res,next)=>{res.set('Cache-Control','no-store');next();});
@@ -129,6 +130,18 @@ export function accountRouter(pool:pg.Pool, production:boolean) {
       await client.query("INSERT INTO ethiosms.audit_events(id,tenant_id,actor_user_id,action,resource_id) VALUES ($1,$2,$3,$4,$5)",[randomUUID(),actor.tenant_id,actor.id,req.body.enabled?'application.enabled':'application.disabled',req.params.id]);return true;
     });
     res.status(changed?200:404).json(changed?{status:'updated'}:{error:'Application not found'});
+  });
+  router.post('/admin/dispatch',authenticate,admin,async(req,res)=>{
+    if(typeof req.body?.paused!=='boolean'){res.status(400).json({error:'Boolean paused flag required'});return;}
+    await transaction(pool,async client=>{
+      await client.query('UPDATE ethiosms.settings SET sending_paused=$1',[req.body.paused]);
+      await client.query("INSERT INTO ethiosms.audit_events(id,tenant_id,actor_user_id,action) VALUES ($1,$2,$3,$4)",[randomUUID(),res.locals.user.tenant_id,res.locals.user.id,req.body.paused?'dispatch.paused':'dispatch.resumed']);
+    });
+    if(!req.body.paused)dispatcher?.kick();res.json({paused:req.body.paused});
+  });
+  router.post('/admin/dispatch/drain',authenticate,admin,async(_req,res)=>{
+    if(!dispatcher){res.status(503).json({error:'Dispatcher not configured'});return;}
+    res.json(await dispatcher.drain());
   });
   router.use(developerRouter(pool,authenticate,admin));
   router.use((error:unknown,_req:Request,res:Response,_next:NextFunction)=>{
