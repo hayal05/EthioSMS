@@ -4,6 +4,7 @@ export interface Config {
   port: number;
   trustProxyHops: number;
   readinessToken?: string;
+  adminSetupKey?: string;
   databaseUrl?: string;
   payloadEncryptionKey?: string;
   otpSecret?:string;
@@ -57,8 +58,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   if(otpSecret&&!/^[a-f0-9]{64}$/.test(otpSecret))throw new Error('OTP_SECRET must be 64 lowercase hexadecimal characters');
   const otpTtl=Number(env.OTP_TTL_SECONDS??300),otpCooldown=Number(env.OTP_RESEND_SECONDS??60),otpAttempts=Number(env.OTP_MAX_ATTEMPTS??5);
   if(!Number.isInteger(otpTtl)||otpTtl<60||otpTtl>600||!Number.isInteger(otpCooldown)||otpCooldown<30||otpCooldown>300||!Number.isInteger(otpAttempts)||otpAttempts<3||otpAttempts>10)throw new Error('Invalid OTP policy');
+  const adminSetupKey=env.ADMIN_SETUP_KEY;
+  if(adminSetupKey && (adminSetupKey.length<32 || adminSetupKey.trim()!==adminSetupKey || /\\s/.test(adminSetupKey))) throw new Error('ADMIN_SETUP_KEY must be at least 32 characters without whitespace');
   const token = env.READINESS_TOKEN;
   if (token && (token.length < 32 || token.trim() !== token || /\s/.test(token))) throw new Error('READINESS_TOKEN must be at least 32 characters without whitespace');
   if (nodeEnv === 'production' && !token) throw new Error('READINESS_TOKEN is required in production');
-  return { nodeEnv: nodeEnv as Config['nodeEnv'], port: Number(port), trustProxyHops:Number(trustProxyHops), readinessToken: token || undefined, databaseUrl, payloadEncryptionKey,otpSecret,otpTtl,otpCooldown,otpAttempts, gateway:gateway as Config['gateway'],smsEnabled,liveApproved,liveRecipients,smsGateToken:env.SMSGATE_TOKEN,smsGateUsername:env.SMSGATE_USERNAME,smsGatePassword:env.SMSGATE_PASSWORD,smsGateDeviceId:env.SMSGATE_DEVICE_ID,smsGateSim };
+  return { nodeEnv: nodeEnv as Config['nodeEnv'], port: Number(port), trustProxyHops:Number(trustProxyHops), readinessToken: token || undefined, adminSetupKey:adminSetupKey||undefined, databaseUrl, payloadEncryptionKey,otpSecret,otpTtl,otpCooldown,otpAttempts, gateway:gateway as Config['gateway'],smsEnabled,liveApproved,liveRecipients,smsGateToken:env.SMSGATE_TOKEN,smsGateUsername:env.SMSGATE_USERNAME,smsGatePassword:env.SMSGATE_PASSWORD,smsGateDeviceId:env.SMSGATE_DEVICE_ID,smsGateSim };
 }
