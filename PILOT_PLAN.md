@@ -144,6 +144,6 @@ Implement tasks sequentially, keep changes reviewable, and update this checklist
 - [x] Task 7: Android gateway integration — code/mock verification; physical live test pending
 - [x] Task 8: OTP service
 - [x] Task 9: Dashboards
-- [ ] Task 10: Small bulk sends
+- [x] Task 10: Small bulk sends
 - [ ] Task 11: Integration documentation
 - [ ] Task 12: Deployment and pilot validation

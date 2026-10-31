@@ -5,6 +5,7 @@ import { transaction } from '../db/pool.js';
 import { digest, token, validUsername, validPassword, hashPassword, verifyPassword } from './security.js';
 import { createAccount } from './accounts.js';
 import type { Dispatcher } from '../messaging/dispatch.js';
+import { campaignRouter } from '../messaging/campaigns.js';
 import { dashboardRouter } from '../developer/dashboard.js';
 import type { Config } from '../config.js';
 import { developerRouter } from '../developer/router.js';
@@ -145,6 +146,7 @@ export function accountRouter(pool:pg.Pool, production:boolean,dispatcher?:Dispa
     if(!dispatcher){res.status(503).json({error:'Dispatcher not configured'});return;}
     res.json(await dispatcher.drain());
   });
+  if(config)router.use(campaignRouter(pool,config,authenticate,admin,dispatcher));
   if(config)router.use(dashboardRouter(pool,config,authenticate,admin,dispatcher));
   router.use(developerRouter(pool,authenticate,admin));
   router.use((error:unknown,_req:Request,res:Response,_next:NextFunction)=>{

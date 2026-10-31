@@ -43,9 +43,9 @@ export class Dispatcher {
         const settings=(await client.query('SELECT sending_paused FROM ethiosms.settings WHERE singleton FOR SHARE')).rows[0];
         if(settings.sending_paused)return undefined;
         const result=await client.query(`SELECT r.*,j.application_id,j.idempotency_key,j.payload_ciphertext,j.expires_at,j.gateway_mode,j.priority,j.kind,
-          EXISTS(SELECT 1 FROM ethiosms.applications a JOIN ethiosms.tenants t ON t.id=a.tenant_id JOIN ethiosms.users u ON u.tenant_id=t.id WHERE a.id=j.application_id AND a.enabled AND t.enabled AND u.enabled) AND (j.kind<>'otp' OR EXISTS(SELECT 1 FROM ethiosms.otp_challenges o WHERE o.job_id=j.id AND o.consumed_at IS NULL AND o.superseded_at IS NULL AND o.expires_at>now() AND o.attempts<o.max_attempts)) AS active
+          EXISTS(SELECT 1 FROM ethiosms.applications a JOIN ethiosms.tenants t ON t.id=a.tenant_id JOIN ethiosms.users u ON u.tenant_id=t.id WHERE a.id=j.application_id AND a.enabled AND t.enabled AND u.enabled) AND (j.kind<>'otp' OR EXISTS(SELECT 1 FROM ethiosms.otp_challenges o WHERE o.job_id=j.id AND o.consumed_at IS NULL AND o.superseded_at IS NULL AND o.expires_at>now() AND o.attempts<o.max_attempts)) AND (j.kind<>'bulk' OR NOT EXISTS(SELECT 1 FROM ethiosms.suppressions s WHERE s.tenant_id=j.tenant_id AND s.phone_number=r.phone_number)) AS active
           FROM ethiosms.message_recipients r JOIN ethiosms.message_jobs j ON j.id=r.job_id AND j.tenant_id=r.tenant_id
-          WHERE j.gateway_mode=$1 AND ((r.status='queued' AND (r.available_at<=now() OR j.expires_at<=now())) OR (r.status='claimed' AND r.lease_expires_at<=now()) OR (r.status IN ('accepted','sent') AND r.reconcile_at<=now()))
+          WHERE j.gateway_mode=$1 AND (NOT j.approval_required OR j.approved_at IS NOT NULL OR j.expires_at<=now()) AND ((r.status='queued' AND (r.available_at<=now() OR j.expires_at<=now())) OR (r.status='claimed' AND r.lease_expires_at<=now()) OR (r.status IN ('accepted','sent') AND r.reconcile_at<=now()))
           ORDER BY j.priority DESC,r.available_at,r.id FOR UPDATE OF r SKIP LOCKED LIMIT 1`,[this.mode]);
         const row=result.rows[0];if(!row)return undefined;
         if(row.status==='claimed'){
@@ -83,7 +83,7 @@ export class Dispatcher {
     const paused=(await this.pool.query('SELECT sending_paused FROM ethiosms.settings WHERE singleton')).rows[0].sending_paused;
     if(paused)return {processed,nextDelay:null};
     const next=await this.pool.query(`SELECT min(due) AS due FROM (
-      SELECT CASE WHEN r.status='queued' THEN least(r.available_at,j.expires_at) WHEN r.status='claimed' THEN r.lease_expires_at ELSE r.reconcile_at END AS due
+      SELECT CASE WHEN r.status='queued' THEN CASE WHEN j.approval_required AND j.approved_at IS NULL THEN j.expires_at ELSE least(r.available_at,j.expires_at) END WHEN r.status='claimed' THEN r.lease_expires_at ELSE r.reconcile_at END AS due
       FROM ethiosms.message_recipients r JOIN ethiosms.message_jobs j ON j.id=r.job_id WHERE j.gateway_mode=$1 AND r.status IN ('queued','claimed','accepted','sent')) q`,[this.mode]);
     return {processed,nextDelay:next.rows[0].due?Math.max(1000,new Date(next.rows[0].due).getTime()-Date.now()):null};
   }

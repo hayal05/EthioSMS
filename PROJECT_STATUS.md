@@ -91,3 +91,6 @@ Purpose/application-bound single-use challenges, cryptographic six-digit codes, 
 
 ## Task 9 — Compact dashboards
 Session-authenticated message form, paginated history, masked detail, server-calculated usage, admin queue/failure summaries, transport-mode badges, last API contact, and pause/recovery controls implemented. Shared validation/persistence is reused by API and dashboard; user app ownership and request limits enforced.
+
+## Task 10 — Small consent-based campaigns
+Single-column CSV/paste parsing, normalized deduplication, 20-recipient cap, masked segment previews, consent/opt-out records, administrator content review and approval, suppression rechecks, unsent cancellation/rejection and partial usage settlement implemented. Bulk work cannot dispatch before approval. Inbound automatic STOP processing is not enabled; manual opt-outs are recorded through the suppression control.
