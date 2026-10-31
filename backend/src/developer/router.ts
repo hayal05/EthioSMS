@@ -1,6 +1,8 @@
 import express, { type Request, type Response, type NextFunction, type RequestHandler } from 'express';
 import { randomUUID } from 'node:crypto';
 import type pg from 'pg';
+import type { Config } from '../config.js';
+import { messageRouter } from '../messaging/router.js';
 import { transaction } from '../db/pool.js';
 import { AccessError,uuid,validScopes } from './common.js';
 import { issueKey,authenticateKey,enforceApiRate } from './keys.js';
@@ -91,7 +93,7 @@ export function developerRouter(pool:pg.Pool,authenticate:RequestHandler,admin:R
   });
   router.use(safeError);return router;
 }
-export function apiRouter(pool:pg.Pool) {
+export function apiRouter(pool:pg.Pool,config:Config) {
   const router=express.Router();
   router.use((_req,res,next)=>{res.set('Cache-Control','no-store');next();});
   router.get('/usage',async(req,res)=>{
@@ -99,6 +101,7 @@ export function apiRouter(pool:pg.Pool) {
     const identity=await authenticateKey(pool,authorization.startsWith('Bearer ')?authorization.slice(7):undefined,'usage:read');
     await enforceApiRate(pool,identity);res.json(await usage(pool,identity.tenant_id,identity.application_id));
   });
+  router.use('/messages',messageRouter(pool,config));
   router.use((_req,res)=>{res.status(404).json({error:'Endpoint not available'});});
   router.use(safeError);return router;
 }

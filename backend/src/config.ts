@@ -4,6 +4,7 @@ export interface Config {
   trustProxyHops: number;
   readinessToken?: string;
   databaseUrl?: string;
+  payloadEncryptionKey?: string;
   gateway: 'mock';
   smsEnabled: false;
 }
@@ -31,8 +32,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       databaseUrl = url.toString();
     } catch { throw new Error('Invalid DATABASE_URL; use PostgreSQL with verified TLS for remote databases'); }
   }
+  const payloadEncryptionKey=env.PAYLOAD_ENCRYPTION_KEY;
+  if(payloadEncryptionKey && !/^[a-f0-9]{64}$/.test(payloadEncryptionKey))throw new Error('PAYLOAD_ENCRYPTION_KEY must be 64 lowercase hexadecimal characters');
   const token = env.READINESS_TOKEN;
   if (token && (token.length < 32 || token.trim() !== token || /\s/.test(token))) throw new Error('READINESS_TOKEN must be at least 32 characters without whitespace');
   if (nodeEnv === 'production' && !token) throw new Error('READINESS_TOKEN is required in production');
-  return { nodeEnv: nodeEnv as Config['nodeEnv'], port: Number(port), trustProxyHops:Number(trustProxyHops), readinessToken: token || undefined, databaseUrl, gateway: 'mock', smsEnabled: false };
+  return { nodeEnv: nodeEnv as Config['nodeEnv'], port: Number(port), trustProxyHops:Number(trustProxyHops), readinessToken: token || undefined, databaseUrl, payloadEncryptionKey, gateway: 'mock', smsEnabled: false };
 }

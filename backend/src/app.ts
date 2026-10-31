@@ -32,7 +32,7 @@ export function createApp(config: Config, webRoot = resolve(dirname(fileURLToPat
     const ready = database === 'ready';
     res.status(ready ? 200 : 503).json({ status: ready ? 'ready' : 'not_ready', stage: 'database', gateway: config.gateway, smsEnabled: config.smsEnabled, database });
   });
-  if (database) app.use('/api/v1',apiRouter(database));
+  if (database) app.use('/api/v1',apiRouter(database,config));
   if (database) app.use('/api', accountRouter(database, config.nodeEnv === 'production'));
   app.use('/api', (_req, res) => { res.status(404).json({ error: 'Endpoint not available' }); });
   if (existsSync(resolve(webRoot, 'index.html'))) {

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { developerTests } from './developer.integration.js';
+import { messageTests } from './messages.integration.js';
 import request from 'supertest';
 import { createApp } from '../src/app.js';
 import { loadConfig } from '../src/config.js';
@@ -109,6 +110,7 @@ test('PostgreSQL migrations, isolation, rollback, and persistent messages', { sk
       await adminAgent.get('/api/auth/me').expect(401);
     });
     await developerTests(pool,t);
+    await messageTests(pool,t);
     await t.test('edited history is rejected and failed migration is fully rolled back', async () => {
       const directory = await mkdtemp(join(tmpdir(),'ethiosms-migrations-'));
       const migrations = await readMigrations();
