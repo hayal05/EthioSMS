@@ -289,7 +289,7 @@ export function Operations({ refreshToken = 0 }: { refreshToken?: number }) {
               </article>
             </div>
             <p className="form-hint">
-              Latest recorded transport issue:{" "}
+              Latest failed or uncertain message:{" "}
               <strong>{data.failures?.[0]?.last_error_code ?? "No recent failed or uncertain recipient"}</strong>
               {data.failures?.[0] ? ` · ${data.failures[0].status} · ${data.failures[0].application}` : ""}
             </p>
