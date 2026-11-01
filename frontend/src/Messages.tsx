@@ -288,8 +288,12 @@ export function Operations({ refreshToken = 0 }: { refreshToken?: number }) {
                 <small>{data.gateway?.allowlistCount ?? 0} pilot recipient(s) allowlisted</small>
               </article>
             </div>
+            <p className="form-hint">
+              Latest recorded transport issue:{" "}
+              <strong>{data.failures?.[0]?.last_error_code ?? "No recent failed or uncertain recipient"}</strong>
+              {data.failures?.[0] ? ` · ${data.failures[0].status} · ${data.failures[0].application}` : ""}
+            </p>
           </section>
-        <>
           <div className="status">
             <span>
               {data.mode === "mock" ? "Mock transport" : "Live transport"} ·{" "}
@@ -300,11 +304,6 @@ export function Operations({ refreshToken = 0 }: { refreshToken?: number }) {
               {data.usage.used_segments}
             </span>
           </div>
-          <p>
-            Last gateway API contact:{" "}
-            {data.lastApiContact ? when(data.lastApiContact) : "Not recorded"}.
-            Phone connectivity is not confirmed by this value.
-          </p>
           <div className="actions">
             <button
               disabled={busy}
