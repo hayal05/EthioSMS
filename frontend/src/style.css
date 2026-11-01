@@ -1417,3 +1417,23 @@ th {
 .section-kicker {
   color: #627184;
 }
+
+
+/* Keep long Android gateway identifiers inside their own metric card. */
+.queue-metrics .metric {
+  min-width: 0;
+}
+.queue-metrics .metric strong.gateway-device-id {
+  max-width: 100%;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+@media (max-width: 720px) {
+  .queue-metrics .metric strong.gateway-device-id {
+    font-size: 12px;
+  }
+}
