@@ -57,7 +57,12 @@ export function Campaigns({
           <h2>Campaign history</h2>
           <p>Bulk messages with consent and administrator review.</p>
         </div>
-        <button onClick={() => setComposing(true)}>
+        <button
+          onClick={() => {
+            setNotice("");
+            setComposing(true);
+          }}
+        >
           <Icon name="plus" /> New campaign
         </button>
       </div>

@@ -53,7 +53,12 @@ export function Messages({
                 : "Checking mode"}
           </span>
         </h2>
-        <button onClick={() => setComposing(true)}>
+        <button
+          onClick={() => {
+            setNotice("");
+            setComposing(true);
+          }}
+        >
           <Icon name="plus" /> New message
         </button>
       </div>
