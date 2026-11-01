@@ -16,13 +16,13 @@ export class SmsGate implements Gateway {
     const ttl=Math.floor(((request.expiresAt?.getTime()??Date.now()+60000)-Date.now())/1000);
     if(ttl<=0)return {outcome:'rejected',code:'EXPIRED'};
     try{
-      const response=await this.call('/messages','POST',{id:request.requestId,deviceId:this.config.smsGateDeviceId,textMessage:{text:request.message},phoneNumbers:[request.to],simNumber:this.config.smsGateSim,ttl,priority:request.priority??0,withDeliveryReport:true});
+      const response=await this.call('/messages','POST',{deviceId:this.config.smsGateDeviceId,textMessage:{text:request.message},phoneNumbers:[request.to],simNumber:this.config.smsGateSim,ttl,priority:request.priority??0});
       if([400,401,403,422].includes(response.status))return {outcome:'rejected',code:'GATEWAY_REJECTED'};
       // No response body or server error is evidence that the POST did not reach the phone.
       if(!response.ok)return {outcome:'unknown',code:'GATEWAY_UNCERTAIN'};
       const data=await response.json() as {id?:unknown};
-      if(data.id!==request.requestId)return {outcome:'unknown',code:'GATEWAY_RESPONSE_MISMATCH'};
-      return {outcome:'accepted',providerId:request.requestId};
+      if(typeof data.id!=='string'||!data.id)return {outcome:'unknown',code:'GATEWAY_RESPONSE_MISMATCH'};
+      return {outcome:'accepted',providerId:data.id};
     }catch{return {outcome:'unknown',code:'GATEWAY_TIMEOUT'};}
   }
   async status(request:{scenario:MockScenario;submittedAt:number;providerId:string}):Promise<'accepted'|'sent'|'delivered'|'unknown'|'failed'>{
