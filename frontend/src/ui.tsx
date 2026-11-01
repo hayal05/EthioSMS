@@ -138,7 +138,7 @@ export function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
     </svg>
   );
 }
-export function Brand() {
+export function Brand({ compact = false }: { compact?: boolean }) {
   return (
     <a className="brand" href="#/overview" aria-label="EthioSMS home">
       <span className="brand-symbol">
@@ -153,7 +153,7 @@ export function Brand() {
       </span>
       <span>
         Ethio<span className="brand-light">SMS</span>
-        <small>MESSAGING CONSOLE</small>
+        {!compact && <small>MESSAGING CONSOLE</small>}
       </span>
     </a>
   );

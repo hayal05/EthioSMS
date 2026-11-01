@@ -195,7 +195,7 @@ export function Console({
         id="navigation"
         className={`sidebar ${open ? "is-open" : ""}`}
       >
-        <Brand />
+        <Brand compact />
         <nav aria-label="Main navigation">
           {["Workspace", "Administration", "Resources"].map((group) => (
             <div className="nav-group" key={group}>
@@ -217,20 +217,11 @@ export function Console({
                   >
                     <Icon name={item.icon} />
                     <span>{item.label}</span>
-                    {page === item.id && <span className="nav-active" />}
                   </a>
                 ))}
             </div>
           ))}
         </nav>
-        <div className="sidebar-note">
-          <Icon name="shield" />
-          <div>
-            Your infrastructure.
-            <br />
-            <span>Your connections.</span>
-          </div>
-        </div>
         <div className="user-profile">
           <span className="avatar">{userLabel.slice(0, 2).toUpperCase()}</span>
           <div>
