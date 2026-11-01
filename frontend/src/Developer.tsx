@@ -51,6 +51,7 @@ export function Developer({
     if (location.hash !== `#/${next}`) location.hash = `/${next}`;
   };
   const detailVersion = useRef(0);
+  const selectedId = useRef("");
   const [refreshToken, setRefreshToken] = useState(0);
   const [visited, setVisited] = useState<Set<Page>>(new Set());
   useEffect(() => {
@@ -100,13 +101,14 @@ export function Developer({
     }
   }
   async function details(id: string) {
+    if (id !== selectedId.current) return;
     const version = ++detailVersion.current;
     if (!id) return;
     const [result, usageResult] = await Promise.all([
       api(`/applications/${id}/keys`),
       api(`/applications/${id}/usage`),
     ]);
-    if (version === detailVersion.current) {
+    if (version === detailVersion.current && id === selectedId.current) {
       setKeys(result.keys);
       setUsage(usageResult);
     }
@@ -115,6 +117,7 @@ export function Developer({
     void refresh().catch((error) => setNotice(error.message));
   }, [admin]);
   useEffect(() => {
+    selectedId.current = selected;
     setIssued("");
     setKeys([]);
     setUsage(null);
