@@ -195,30 +195,47 @@ svg {
   inset: 0 auto 0 0;
   width: 236px;
   background: var(--nav);
-  padding: 30px 18px 0;
+  padding: 28px 18px 0;
   display: flex;
   flex-direction: column;
   color: #a0afbf;
   z-index: 30;
 }
+.sidebar .brand-symbol {
+  background: transparent;
+  box-shadow: none;
+  color: #4ac99e;
+}
 .sidebar > .brand {
-  margin: 0 12px 36px;
+  margin: 0 12px 32px;
 }
 .sidebar nav {
   overflow-y: auto;
   flex: 1;
   min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #506373 transparent;
+}
+.sidebar nav::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar nav::-webkit-scrollbar-thumb {
+  background: #506373;
+  border-radius: 4px;
 }
 .nav-group {
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 .nav-label {
   display: block;
   font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: #8195a7;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #94a7b8;
   padding: 0 15px;
   margin-bottom: 10px;
 }
@@ -229,10 +246,11 @@ svg {
   gap: 12px;
   color: #9aabbd;
   text-decoration: none;
-  padding: 11px 14px;
-  border-radius: 7px;
-  font-size: 12px;
-  margin: 3px 0;
+  padding: 12px 14px;
+  border-left: 2px solid transparent;
+  border-radius: 2px;
+  font-size: 13px;
+  margin: 4px 0;
   transition: background 0.15s;
 }
 .nav-group a:hover {
@@ -240,34 +258,10 @@ svg {
   background: #1a2a38;
 }
 .nav-group a.active {
-  background: #0e3c34;
-  color: #68ddba;
-  font-weight: 550;
-}
-.nav-active {
-  width: 5px;
-  height: 5px;
-  border-radius: 100%;
-  background: #42cfa3;
-  margin-left: auto;
-}
-.sidebar-note {
-  border: 1px solid #293a47;
-  border-radius: 9px;
-  padding: 14px;
-  display: flex;
-  gap: 11px;
-  margin: 16px 5px 22px;
-  color: #b9c9d5;
-  font-size: 11px;
-  line-height: 1.7;
-}
-.sidebar-note svg {
-  color: #54ba9e;
-  margin-top: 3px;
-}
-.sidebar-note span {
-  color: #94a7b8;
+  background: #ffffff08;
+  border-left-color: #54c9a3;
+  color: #e2eee9;
+  font-weight: 500;
 }
 .user-profile {
   border-top: 1px solid #24323e;
@@ -283,8 +277,8 @@ svg {
   width: 32px;
   height: 32px;
   background: #253949;
-  border: 1px solid #385063;
-  border-radius: 8px;
+  border: 0;
+  border-radius: 50%;
   color: #b6d6d2;
   font-size: 10px;
   flex-shrink: 0;
