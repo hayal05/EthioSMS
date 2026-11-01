@@ -243,6 +243,53 @@ export function Operations({ refreshToken = 0 }: { refreshToken?: number }) {
       <h2>Operations</h2>
       {data ? (
         <>
+          <section className="panel" aria-labelledby="android-gateway-heading">
+            <div className="panel-heading">
+              <div>
+                <h2 id="android-gateway-heading">Android SMS Gateway</h2>
+                <p>Device configuration and transport connectivity</p>
+              </div>
+              <span className={"state " + (data.mode === "live" ? "accepted" : "unknown")}>
+                {data.mode === "live" ? "Live gateway" : "Mock gateway"}
+              </span>
+            </div>
+            <div className="status">
+              <span>Device connection: <strong>Not verified</strong></span>
+              <span>
+                Last successful API contact:{" "}
+                <strong>{data.lastApiContact ? when(data.lastApiContact) : "Never recorded"}</strong>
+              </span>
+            </div>
+            <p className="form-hint">
+              API contact confirms that EthioSMS reached the SMS Gateway API during a
+              message operation. It does not prove that the Android app is currently
+              online, that the phone has network service, or that the selected SIM can
+              send SMS. The gateway does not currently provide a device heartbeat here.
+            </p>
+            <div className="metrics queue-metrics">
+              <article className="metric">
+                <div>Device ID</div>
+                <strong>{data.gateway?.deviceId ?? "Not configured"}</strong>
+                <small>{data.gateway?.configured ? "Configured in service environment" : "Live device configuration unavailable"}</small>
+              </article>
+              <article className="metric">
+                <div>Selected SIM</div>
+                <strong>{data.gateway?.sim ?? "—"}</strong>
+                <small>Configured SIM slot</small>
+              </article>
+              <article className="metric">
+                <div>SMS sending</div>
+                <strong>{data.gateway?.smsEnabled ? "Enabled" : "Disabled"}</strong>
+                <small>Service environment flag</small>
+              </article>
+              <article className="metric">
+                <div>Live approval</div>
+                <strong>{data.gateway?.liveApproved ? "Approved" : "Not approved"}</strong>
+                <small>{data.gateway?.allowlistCount ?? 0} pilot recipient(s) allowlisted</small>
+              </article>
+            </div>
+          </section>
+        <>
           <div className="status">
             <span>
               {data.mode === "mock" ? "Mock transport" : "Live transport"} ·{" "}
