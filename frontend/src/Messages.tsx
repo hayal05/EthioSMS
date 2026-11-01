@@ -269,7 +269,7 @@ export function Operations({ refreshToken = 0 }: { refreshToken?: number }) {
             <div className="metrics queue-metrics">
               <article className="metric">
                 <div>Device ID</div>
-                <strong>{data.gateway?.deviceId ?? "Not configured"}</strong>
+                <strong className="gateway-device-id">{data.gateway?.deviceId ?? "Not configured"}</strong>
                 <small>{data.gateway?.configured ? "Configured in service environment" : "Live device configuration unavailable"}</small>
               </article>
               <article className="metric">
