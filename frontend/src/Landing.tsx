@@ -161,7 +161,7 @@ export function Landing({
             <i />
             <div><span><Icon name="phone" /></span><strong>SMS gateway</strong><small>Configured transport</small></div>
           </div>
-          <p className="public-note"><Icon name="info" size={14} /> Live delivery depends on an enabled and validated gateway, device, SIM and provider configuration. Test mode simulates transport and is not proof of physical SMS delivery.</p>
+          <p className="public-note"><Icon name="alert" size={14} /> Live delivery depends on an enabled and validated gateway, device, SIM and provider configuration. Test mode simulates transport and is not proof of physical SMS delivery.</p>
         </section>
 
         <section className="public-section public-plans" id="plans">
