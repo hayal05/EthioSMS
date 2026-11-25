@@ -15,7 +15,7 @@ export function Landing({
       <header className="public-header">
         <a className="public-brand" href="#home" onClick={closeMenu} aria-label="EthioSMS home">
           <span className="public-brand-mark"><Icon name="message" size={21} /></span>
-          <span>Ethio<span>SMS</span><small>MESSAGING INFRASTRUCTURE</small></span>
+          <span className="public-brand-copy"><strong>Ethio<span>SMS</span></strong><small>MESSAGING INFRASTRUCTURE</small></span>
         </a>
         <button className="public-menu-toggle" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>
           <Icon name={menuOpen ? "close" : "menu"} />
@@ -197,7 +197,7 @@ export function Landing({
 
       <footer className="public-footer">
         <div className="public-footer-main">
-          <a className="public-brand public-brand-footer" href="#home"><span className="public-brand-mark"><Icon name="message" size={20} /></span><span>Ethio<span>SMS</span><small>MESSAGING INFRASTRUCTURE</small></span></a>
+          <a className="public-brand public-brand-footer" href="#home"><span className="public-brand-mark"><Icon name="message" size={20} /></span><span className="public-brand-copy"><strong>Ethio<span>SMS</span></strong><small>MESSAGING INFRASTRUCTURE</small></span></a>
           <p>Messaging infrastructure for ERP platforms, business applications and developer teams.</p>
           <div className="public-footer-links"><a href="#platform">Platform</a><a href="#services">Services</a><a href="#plans">Plans</a><a href="https://github.com/hayal05/EthioSMS/tree/main/docs" target="_blank" rel="noreferrer">Documentation</a><a href="https://github.com/hayal05/EthioSMS" target="_blank" rel="noreferrer">GitHub</a></div>
         </div>
