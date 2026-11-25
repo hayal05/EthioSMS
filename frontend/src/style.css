@@ -15,7 +15,7 @@
   --green: #16a34a;
   --line: #e5e9ee;
   --muted: #738091;
-  --nav: #047857;
+  --nav: #166534;
 }
 * {
   box-sizing: border-box;
@@ -214,7 +214,7 @@ svg {
   flex: 1;
   min-height: 0;
   scrollbar-width: thin;
-  scrollbar-color: #6ee7b7 transparent;
+  scrollbar-color: #86efac transparent;
 }
 .sidebar nav::-webkit-scrollbar {
   width: 4px;
@@ -223,7 +223,7 @@ svg {
   background: transparent;
 }
 .sidebar nav::-webkit-scrollbar-thumb {
-  background: #6ee7b7;
+  background: #86efac;
   border-radius: 4px;
 }
 .nav-group {
@@ -235,7 +235,7 @@ svg {
   font-weight: 400;
   text-transform: none;
   letter-spacing: 0;
-  color: #d1fae5;
+  color: #dcfce7;
   padding: 0 15px;
   margin-bottom: 10px;
 }
@@ -255,7 +255,7 @@ svg {
 }
 .nav-group a:hover {
   color: white;
-  background: #065f46;
+  background: #14532d;
 }
 .nav-group a.active {
   background: #065f46;
@@ -264,7 +264,7 @@ svg {
   font-weight: 500;
 }
 .user-profile {
-  border-top: 1px solid #34d399;
+  border-top: 1px solid #4ade80;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -894,7 +894,7 @@ pre {
   background: #fafcfd;
 }
 .auth-story {
-  background: #101f2b;
+  background: #166534;
   color: white;
   padding: 48px 65px;
   display: flex;
@@ -909,17 +909,17 @@ pre {
   position: absolute;
   width: 420px;
   height: 420px;
-  border: 1px solid #294437;
+  border: 1px solid #4ade80;
   border-radius: 50%;
   bottom: -270px;
   left: -70px;
   box-shadow:
-    0 0 0 65px #18342b44,
-    0 0 0 130px #18342b22;
+    0 0 0 65px #14532d66,
+    0 0 0 130px #14532d33;
   pointer-events: none;
 }
 .auth-story .eyebrow {
-  color: #55b895;
+  color: #bbf7d0;
   font-size: 10px;
 }
 .auth-story h1 {
@@ -931,22 +931,22 @@ pre {
   font-weight: 550;
 }
 .auth-story p {
-  color: #9bafbd;
+  color: #dcfce7;
   font-size: 13px;
   max-width: 350px;
   line-height: 1.9;
 }
 .auth-terminal {
   margin-top: 38px;
-  border: 1px solid #294150;
+  border: 1px solid #4ade80;
   border-radius: 10px;
   overflow: hidden;
-  background: #132735;
+  background: #14532d;
   box-shadow: 0 18px 30px #0001;
 }
 .auth-terminal > div {
   padding: 14px 17px;
-  border-bottom: 1px solid #294150;
+  border-bottom: 1px solid #4ade80;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -954,32 +954,32 @@ pre {
 .auth-terminal i {
   width: 5px;
   height: 5px;
-  background: #3c5a69;
+  background: #86efac;
   border-radius: 50%;
 }
 .auth-terminal > div span {
   font-size: 8px;
   letter-spacing: 1.3px;
   margin-left: 15px;
-  color: #7893a5;
+  color: #bbf7d0;
 }
 .auth-terminal code {
   display: block;
-  color: #9db7c6;
+  color: #ecfdf5;
   font-size: 12px;
   line-height: 1.9;
   padding: 22px;
   white-space: pre-wrap;
 }
 .auth-terminal code span {
-  color: #4ade80;
+  color: #bbf7d0;
 }
 .auth-terminal small {
   display: flex;
   gap: 8px;
   padding: 14px 22px;
-  color: #5c8f81;
-  border-top: 1px solid #243d49;
+  color: #bbf7d0;
+  border-top: 1px solid #4ade80;
   font-size: 10px;
 }
 .auth-foot {
@@ -1026,6 +1026,12 @@ pre {
 .auth-card form button {
   margin-top: 4px;
   padding: 12px;
+  background: #166534;
+  border-color: #166534;
+}
+.auth-card form button:hover {
+  background: #14532d;
+  border-color: #14532d;
 }
 .auth-card > .secondary {
   width: 100%;
@@ -1033,6 +1039,13 @@ pre {
   background: transparent;
   font-size: 11px;
   color: #6a7f91;
+}
+.auth-card a {
+  color: #166534;
+}
+.auth-card input:focus-visible {
+  border-color: #166534;
+  outline-color: #86efac;
 }
 .auth-card > .form-hint {
   text-align: center;
