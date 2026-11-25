@@ -2401,3 +2401,114 @@ th {
 .public-brand-copy strong > span { color: #398052; }
 .public-brand-footer .public-brand-copy strong { color: #eef7f0; }
 .public-brand-footer .public-brand-copy strong > span { color: #a9d3b5; }
+
+
+/* Bright Forest Green palette: keep the brand green without dark surfaces. */
+.auth-layout {
+  background: #f3f8f4;
+}
+.auth-story {
+  background: #166534;
+  color: #ffffff;
+}
+.auth-story:before,
+.auth-story:after {
+  border-color: #ffffff30;
+  box-shadow: 0 0 0 1px #ffffff12, 0 0 0 70px #ffffff08;
+}
+.auth-story .eyebrow { color: #d7f0de; }
+.auth-story h1 { color: #ffffff; }
+.auth-story p { color: #e2f2e6; }
+.auth-terminal {
+  background: #247844;
+  border-color: #8bc99d;
+  box-shadow: 0 18px 38px #0c3b1e25;
+}
+.auth-terminal > div,
+.auth-terminal small {
+  background: #ffffff0b;
+  border-color: #ffffff30;
+}
+.auth-terminal > div span,
+.auth-terminal small,
+.auth-foot { color: #e0f2e5 !important; }
+.auth-terminal code { color: #ffffff; }
+.auth-terminal code span { color: #c4f0cf; }
+.auth-main {
+  background: #f3f8f4;
+}
+.auth-card {
+  border-color: #dceade;
+  box-shadow: 0 14px 40px #16653410;
+}
+.auth-card h2 { color: #183b25; }
+.auth-card > .eyebrow { color: #34784a; }
+.auth-card form button,
+.auth-card form button:hover {
+  background: #166534;
+  border-color: #166534;
+}
+.auth-card > .secondary {
+  color: #166534;
+  background: #f0f7f1;
+  border-color: #d5e7d9;
+}
+.auth-card > .secondary:hover { background: #e5f2e8; }
+
+.public-site {
+  --pub-green: #166534;
+  --pub-dark: #166534;
+  background: #ffffff;
+}
+.public-hero {
+  background: linear-gradient(180deg, #f1f7f2 0%, #ffffff 100%);
+}
+.public-hero h1 em { color: #166534; }
+.public-band {
+  color: #183b25;
+  background: #eaf4ec;
+}
+.public-band h2,
+.public-contact h2 { color: #183b25; }
+.public-kicker-light { color: #34784a; }
+.public-band-copy > p,
+.public-contact > div > p { color: #526b59; }
+.public-use-cases { border-color: #cfe2d3; }
+.public-use-cases > div { border-color: #cfe2d3; }
+.public-use-cases > div > span,
+.public-use-cases > div > svg { color: #34784a; }
+.public-use-cases strong { color: #214b2f; }
+.public-use-cases p { color: #5c7462; }
+.public-contact {
+  background: #eaf4ec;
+  border-top: 1px solid #d9e9dc;
+}
+.public-site .public-contact-primary {
+  color: #ffffff;
+  background: #166534;
+  border-color: #166534;
+}
+.public-site .public-contact-primary:hover {
+  background: #1d7a40;
+  border-color: #1d7a40;
+}
+.public-contact-actions > a { color: #286b3d; }
+.public-contact-actions > a:hover { color: #166534; }
+.public-footer {
+  background: #f3f8f4;
+  border-top: 1px solid #e1ece3;
+}
+.public-brand-footer .public-brand-copy strong { color: #183b25; }
+.public-brand-footer .public-brand-copy strong > span { color: #34784a; }
+.public-brand-footer small { color: #6d8874; }
+.public-footer-main > p { color: #617667; }
+.public-footer-links a { color: #496452; }
+.public-footer-links a:hover { color: #166534; }
+.public-footer-bottom {
+  border-color: #dce9df;
+  color: #718477;
+}
+@media (max-width: 720px) {
+  .auth-story { background: #166534; }
+  .auth-main { background: #f3f8f4; }
+}
