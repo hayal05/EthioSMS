@@ -33,7 +33,7 @@ npm run build
 npm start
 ```
 
-On an empty installation, open the website and create the master admin with **email, password and confirm password**. The first account is automatically the master admin and is signed in immediately. No setup key, username or invitation token is required for this first account. Registration closes permanently once any account exists, including disabled/legacy accounts; existing installations keep their current administrator. Sign in with the administrator email, or a legacy username for existing users. The trusted offline bootstrap/recovery commands remain available for operators; ordinary users still use administrator invitations. Apply migration `010_master_admin_email.sql` before using the new form.
+On an empty installation, open the website and create the master admin with **email, password and confirm password**. The first account is automatically the master admin and is signed in immediately. After the first admin is created, anyone can select **Create an account** on the sign-in page and register with an email address and password. Public registration does not require an invitation or email/phone verification; each new user receives a separate workspace and is signed in immediately. Password-based login remains required. Existing invitation tokens remain supported for previously invited users. Sign in with the account email, or a legacy username for existing users. The trusted offline bootstrap/recovery commands remain available for operators. Apply migration `010_master_admin_email.sql` before using the first-admin form.
 
 For development run `npm run dev:api` and `npm run dev:web` separately. Vite proxies /api and /health to port 3000; change its proxy if changing the API port.
 
@@ -56,4 +56,4 @@ Use .env.example; never commit .env, keys, OTPs or gateway credentials, and neve
 
 Migrations are explicit and checksummed; do not edit applied SQL. Run deliberate maintenance daily during the pilot via the admin control or `npm run db:maintain`; defaults are 30-day message history, 24-hour expired OTP metadata and 90-day audit retention. Back up data and secrets before migrations and rehearse restoration with dispatch paused. See the operations guide for the complete process.
 
-Public registration, paid billing/credits, recurring campaigns, branded sender IDs, multi-device failover, custom Android development and availability guarantees are deferred. Operator approval and actual SIM/package capacity must be confirmed before commercial automated sending.
+Paid billing/credits, recurring campaigns, branded sender IDs, multi-device failover, custom Android development and availability guarantees are deferred. Operator approval and actual SIM/package capacity must be confirmed before commercial automated sending.

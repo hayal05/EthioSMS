@@ -9,7 +9,7 @@ interface User {
   role: "admin" | "user";
   enabled?: boolean;
 }
-type Mode = "login" | "token" | "initial";
+type Mode = "login" | "token" | "initial" | "register";
 export function Accounts({
   onSessionChange,
 }: {
@@ -57,7 +57,20 @@ export function Accounts({
     setBusy(true);
     setNotice("");
     try {
-      if (mode === "initial") {
+      if (mode === "register") {
+        if (password !== confirmPassword)
+          throw new Error("Passwords do not match");
+        const result = await api("/auth/register", "POST", {
+          email,
+          password,
+          confirmPassword,
+        });
+        setUser(result.user);
+        setUsername(result.user.email);
+        setEmail("");
+        setMode("login");
+        setNotice("Your account is ready.");
+      } else if (mode === "initial") {
         if (password !== confirmPassword)
           throw new Error("Passwords do not match");
         const result = await api("/auth/setup/initial", "POST", {
@@ -117,7 +130,9 @@ export function Accounts({
       ? "Create Master Admin"
       : mode === "token"
         ? "Set your password"
-        : "Welcome back";
+        : mode === "register"
+          ? "Create your account"
+          : "Welcome back";
   return (
     <>
       {!user && (
@@ -168,14 +183,16 @@ export function Accounts({
                   ? "Set up your workspace with your first administrator account."
                   : mode === "token"
                     ? "Use your invitation or recovery token to set a password."
-                    : "Sign in to manage your messaging workspace."}
+                    : mode === "register"
+                      ? "Create an account and start using EthioSMS."
+                      : "Sign in to manage your messaging workspace."}
               </p>{" "}
               <>
                 {checkingSetup ? (
                   <p role="status">Loading account…</p>
                 ) : (
                   <form onSubmit={submit}>
-                    {mode === "initial" ? (
+                    {mode === "initial" || mode === "register" ? (
                       <>
                         <label>
                           Email
@@ -214,10 +231,15 @@ export function Accounts({
                             onChange={(e) => setConfirmPassword(e.target.value)}
                           />
                         </label>
-                        <p className="form-hint">
-                          The first account becomes the master admin.
-                          Registration closes after this account is created.
-                        </p>
+                        {mode === "initial" ? (
+                          <p className="form-hint">
+                            The first account becomes the master admin.
+                          </p>
+                        ) : (
+                          <p className="form-hint">
+                            No invitation or email/phone verification is required.
+                          </p>
+                        )}
                       </>
                     ) : mode === "token" ? (
                       <>
@@ -273,11 +295,41 @@ export function Accounts({
                         ? "Please wait…"
                         : mode === "initial"
                           ? "Create Master Admin"
-                          : mode === "token"
+                          : mode === "register"
+                            ? "Create account"
+                            : mode === "token"
                             ? "Set password"
                             : "Sign in"}
                     </button>
                   </form>
+                )}
+                {mode === "login" && (
+                  <button
+                    className="secondary"
+                    onClick={() => {
+                      setMode("register");
+                      setPassword("");
+                      setConfirmPassword("");
+                      setEmail("");
+                      setNotice("");
+                    }}
+                  >
+                    Create an account
+                  </button>
+                )}
+                {mode === "register" && (
+                  <button
+                    className="secondary"
+                    onClick={() => {
+                      setMode("login");
+                      setPassword("");
+                      setConfirmPassword("");
+                      setEmail("");
+                      setNotice("");
+                    }}
+                  >
+                    Back to sign in
+                  </button>
                 )}
                 {mode === "login" && (
                   <button
