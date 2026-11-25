@@ -12,7 +12,7 @@
   font-size: 14px;
   line-height: 1.5;
   font-weight: 400;
-  --green: #087f5b;
+  --green: #16a34a;
   --line: #e5e9ee;
   --muted: #738091;
   --nav: #101b26;
@@ -55,7 +55,7 @@ button {
     box-shadow 0.15s;
 }
 button:hover {
-  background: #066a4c;
+  background: #15803d;
 }
 button:disabled {
   opacity: 0.5;
@@ -89,7 +89,7 @@ a:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 3px solid #34ba98;
+  outline: 3px solid #4ade80;
   outline-offset: 3px;
 }
 h1,
@@ -169,7 +169,7 @@ svg {
   place-items: center;
   width: 35px;
   height: 35px;
-  background: #19b987;
+  background: #16a34a;
   color: white;
   border-radius: 9px;
   box-shadow: 0 4px 12px #0002;
@@ -204,7 +204,7 @@ svg {
 .sidebar .brand-symbol {
   background: transparent;
   box-shadow: none;
-  color: #4ac99e;
+  color: #4ade80;
 }
 .sidebar > .brand {
   margin: 0 12px 32px;
@@ -259,7 +259,7 @@ svg {
 }
 .nav-group a.active {
   background: #ffffff08;
-  border-left-color: #54c9a3;
+  border-left-color: #16a34a;
   color: #e2eee9;
   font-weight: 500;
 }
@@ -374,12 +374,12 @@ svg {
   background: #889cad;
 }
 .pill.green {
-  background: #eaf8f2;
-  color: #0a8760;
+  background: #dcfce7;
+  color: #166534;
   border-color: #c9ebdd;
 }
 .pill.green i {
-  background: #17ae79;
+  background: #16a34a;
 }
 .content {
   max-width: 1500px;
@@ -424,27 +424,27 @@ svg {
   align-items: center;
   gap: 20px;
   padding: 28px 30px;
-  border: 1px solid #d5e8df;
+  border: 1px solid #bbf7d0;
   border-radius: 11px;
-  background: linear-gradient(110deg, #edf6f0, #f5faf7);
+  background: linear-gradient(110deg, #f0fdf4, #f7fef9);
   margin-bottom: 24px;
 }
 .eyebrow {
   font-size: 9px;
   letter-spacing: 1.5px;
   font-weight: 700;
-  color: #54816b;
+  color: #166534;
 }
 .overview-banner h2 {
   font-size: 24px;
-  color: #204e3d;
+  color: #14532d;
   letter-spacing: -0.7px;
   margin: 10px 0 6px;
 }
 .overview-banner p {
   font-size: 12px;
   margin: 0;
-  color: #718c7e;
+  color: #3f6b4b;
 }
 .overview-banner button {
   flex-shrink: 0;
@@ -562,8 +562,8 @@ svg {
   font-weight: 400;
 }
 .resource-card:hover {
-  background: #f0f7f3;
-  border-color: #b4d5c4;
+  background: #f0fdf4;
+  border-color: #86efac;
 }
 .resource-icon {
   display: grid;
@@ -712,8 +712,8 @@ legend {
 }
 .token {
   padding: 20px;
-  border: 1px solid #cde6d8;
-  background: #f0f8f3;
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
   border-radius: 8px;
   font-size: 12px;
   overflow-wrap: anywhere;
@@ -724,7 +724,7 @@ legend {
   word-break: break-all;
 }
 .token p {
-  color: #456c56;
+  color: #166534;
 }
 .notice,
 [role="status"]:not(:empty) {
@@ -820,12 +820,12 @@ td button {
   justify-content: space-between;
   gap: 14px;
   padding: 18px 20px;
-  border: 1px solid #dcebe3;
-  background: #f1f8f4;
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
   border-radius: 8px;
   font-size: 12px;
   margin: 20px 0;
-  color: #476c58;
+  color: #166534;
 }
 .section-kicker {
   display: flex;
@@ -972,7 +972,7 @@ pre {
   white-space: pre-wrap;
 }
 .auth-terminal code span {
-  color: #50cca1;
+  color: #4ade80;
 }
 .auth-terminal small {
   display: flex;
