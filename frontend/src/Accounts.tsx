@@ -331,19 +331,6 @@ export function Accounts({
                     Back to sign in
                   </button>
                 )}
-                {mode === "login" && (
-                  <button
-                    className="secondary"
-                    onClick={() => {
-                      setMode("token");
-                      setPassword("");
-                      setSetupToken("");
-                      setNotice("");
-                    }}
-                  >
-                    I have an invitation token
-                  </button>
-                )}
                 {mode === "token" && (
                   <button
                     className="secondary"
