@@ -15,7 +15,7 @@
   --green: #16a34a;
   --line: #e5e9ee;
   --muted: #738091;
-  --nav: #16a34a;
+  --nav: #047857;
 }
 * {
   box-sizing: border-box;
@@ -214,7 +214,7 @@ svg {
   flex: 1;
   min-height: 0;
   scrollbar-width: thin;
-  scrollbar-color: #86d9a3 transparent;
+  scrollbar-color: #6ee7b7 transparent;
 }
 .sidebar nav::-webkit-scrollbar {
   width: 4px;
@@ -223,7 +223,7 @@ svg {
   background: transparent;
 }
 .sidebar nav::-webkit-scrollbar-thumb {
-  background: #86d9a3;
+  background: #6ee7b7;
   border-radius: 4px;
 }
 .nav-group {
@@ -235,7 +235,7 @@ svg {
   font-weight: 400;
   text-transform: none;
   letter-spacing: 0;
-  color: #dcfce7;
+  color: #d1fae5;
   padding: 0 15px;
   margin-bottom: 10px;
 }
@@ -255,16 +255,16 @@ svg {
 }
 .nav-group a:hover {
   color: white;
-  background: #15803d;
+  background: #065f46;
 }
 .nav-group a.active {
-  background: #15803d;
+  background: #065f46;
   border-left-color: #ffffff;
   color: #ffffff;
   font-weight: 500;
 }
 .user-profile {
-  border-top: 1px solid #86d9a3;
+  border-top: 1px solid #34d399;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -276,7 +276,7 @@ svg {
   place-items: center;
   width: 32px;
   height: 32px;
-  background: #15803d;
+  background: #065f46;
   border: 0;
   border-radius: 50%;
   color: #ffffff;
@@ -301,7 +301,7 @@ svg {
   color: #dcfce7;
 }
 .user-profile .icon-button:hover {
-  background: #15803d;
+  background: #065f46;
 }
 .workspace {
   margin-left: 236px;
