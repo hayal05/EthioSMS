@@ -37,7 +37,7 @@ export function Landing({
           <div className="public-hero-grid">
             <div className="public-hero-copy">
               <div className="public-overline"><span /> COMMUNICATIONS INFRASTRUCTURE</div>
-              <h1>Mission-critical messaging. <em>One clear control plane.</em></h1>
+              <h1>Business messaging. <em>One clear control plane.</em></h1>
               <p className="public-lead">Connect your applications to SMS with a developer-first API and an operational console built for teams that need visibility, control and dependable workflows.</p>
               <div className="public-hero-actions">
                 <button className="public-primary" onClick={onGetStarted}>Create your workspace <Icon name="arrow" size={16} /></button>
