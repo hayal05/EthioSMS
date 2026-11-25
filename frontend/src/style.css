@@ -1847,3 +1847,184 @@ th {
     padding: 8px 10px;
   }
 }
+
+
+/* Enterprise infrastructure authentication refinement. */
+.auth-layout {
+  background: #f3f6f4;
+  grid-template-columns: minmax(420px, 1fr) minmax(440px, 1fr);
+}
+.auth-story {
+  background:
+    linear-gradient(90deg, #ffffff08 1px, transparent 1px),
+    linear-gradient(#ffffff08 1px, transparent 1px),
+    radial-gradient(ellipse at 15% 12%, #26754b 0%, transparent 42%),
+    linear-gradient(145deg, #102b20 0%, #123b29 52%, #0b241a 100%);
+  background-size: 44px 44px, 44px 44px, auto, auto;
+  color: #f4f8f5;
+}
+.auth-story:before {
+  width: 620px;
+  height: 620px;
+  right: -330px;
+  top: 18%;
+  border-color: #a7d7b51c;
+  box-shadow: 0 0 0 1px #ffffff08, 0 0 0 70px #ffffff05;
+}
+.auth-story:after {
+  width: 430px;
+  height: 430px;
+  left: -240px;
+  bottom: -300px;
+  border-color: #a7d7b51a;
+  box-shadow: 0 0 0 55px #ffffff05, 0 0 0 110px #ffffff04;
+}
+.auth-story .eyebrow {
+  color: #9bd5b0;
+  font-weight: 650;
+  letter-spacing: 2px;
+}
+.auth-story h1 {
+  max-width: 500px;
+  font-size: clamp(38px, 4vw, 56px);
+  line-height: 1.08;
+  letter-spacing: -2px;
+  font-weight: 620;
+}
+.auth-story p {
+  max-width: 410px;
+  color: #c2d7c9;
+  font-size: 13px;
+  line-height: 1.75;
+}
+.auth-terminal {
+  max-width: 460px;
+  margin-top: clamp(18px, 3vh, 32px);
+  background: #071b13d9;
+  border: 1px solid #80b99845;
+  border-radius: 10px;
+  box-shadow: 0 22px 55px #061b1238;
+  backdrop-filter: blur(12px);
+}
+.auth-terminal > div {
+  background: #ffffff08;
+  border-bottom: 1px solid #ffffff14;
+  padding: 12px 16px;
+}
+.auth-terminal i {
+  width: 6px;
+  height: 6px;
+  background: #70bd8d;
+}
+.auth-terminal > div span {
+  color: #a9c9b5;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+}
+.auth-terminal code {
+  color: #dcebe1;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.auth-terminal code span {
+  color: #8cdaa9;
+}
+.auth-terminal small {
+  color: #a9c9b5;
+  background: #ffffff05;
+  font-size: 9px;
+}
+.auth-foot {
+  color: #9bb9a6 !important;
+  font-size: 9px !important;
+  letter-spacing: .2px;
+}
+.auth-main {
+  background:
+    radial-gradient(ellipse at 85% 8%, #e2eee6 0%, transparent 34%),
+    #f5f8f6;
+}
+.auth-card {
+  max-width: 420px;
+  border: 1px solid #e0e9e3;
+  border-radius: 12px;
+  padding: clamp(26px, 3vw, 38px);
+  box-shadow: 0 18px 55px #183d2910, 0 2px 8px #183d2908;
+}
+.auth-card > .eyebrow {
+  color: #527761;
+  font-size: 9px;
+  letter-spacing: 1.8px;
+}
+.auth-card > .eyebrow:before {
+  background: #2f8050;
+  box-shadow: 0 0 0 4px #e8f2eb;
+}
+.auth-card h2 {
+  color: #18291f;
+  font-size: 30px;
+  font-weight: 650;
+  letter-spacing: -1.1px;
+}
+.auth-card .auth-description {
+  color: #718076;
+  font-size: 12px;
+}
+.auth-card label {
+  color: #34483c;
+  font-weight: 600;
+  font-size: 11px;
+}
+.auth-card input {
+  border-color: #d8e3db;
+  border-radius: 7px;
+  background: #fbfdfb;
+  color: #1f3026;
+  font-size: 12px;
+}
+.auth-card input:focus {
+  border-color: #43845b;
+  box-shadow: 0 0 0 3px #43845b16;
+}
+.auth-card form button {
+  background: #166534;
+  border-color: #166534;
+  border-radius: 7px;
+  box-shadow: 0 3px 8px #1665341c;
+  font-size: 12px;
+  font-weight: 650;
+}
+.auth-card form button:hover {
+  background: #14532d;
+  border-color: #14532d;
+}
+.auth-card > .secondary {
+  border-color: #dfe9e2;
+  background: #f7faf8;
+  color: #315c40;
+}
+.auth-card [role="status"]:not(:empty) {
+  background: #f0f6f1;
+  border-color: #dce9df;
+  color: #466650;
+}
+@media (max-width: 900px) {
+  .auth-layout {
+    grid-template-columns: minmax(280px, .9fr) minmax(360px, 1.1fr);
+  }
+  .auth-story h1 {
+    font-size: 36px;
+  }
+}
+@media (max-width: 720px) {
+  .auth-story {
+    background:
+      linear-gradient(90deg, #ffffff08 1px, transparent 1px),
+      linear-gradient(#ffffff08 1px, transparent 1px),
+      linear-gradient(120deg, #102b20, #166534);
+    background-size: 36px 36px, 36px 36px, auto;
+  }
+  .auth-main {
+    background: #f5f8f6;
+  }
+}
