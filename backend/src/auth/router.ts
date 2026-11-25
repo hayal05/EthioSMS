@@ -66,6 +66,30 @@ export function accountRouter(pool:pg.Pool, production:boolean,dispatcher?:Dispa
       throw error;
     }
   });
+  router.post('/auth/register',async(req,res)=>{
+    const email=typeof req.body?.email==='string'?req.body.email.trim().toLowerCase():'';
+    const password=req.body?.password,confirm=req.body?.confirmPassword;
+    if(!await allowed(`register-ip:${req.ip}`,5)){res.status(429).json({error:'Too many registration attempts; try later'});return;}
+    if(!validEmail(email)||!validPassword(password)){res.status(400).json({error:'Enter a valid email and password of 12–128 characters'});return;}
+    if(password!==confirm){res.status(400).json({error:'Passwords do not match'});return;}
+    const passwordHash=await hashPassword(password),raw=token();
+    try{
+      const user=await transaction(pool,async client=>{
+        const tenantId=randomUUID(),userId=randomUUID();
+        const username=`user_${userId.replace(/-/g,'')}`;
+        await client.query('INSERT INTO ethiosms.tenants(id,name,enabled) VALUES ($1,$2,true)',[tenantId,email]);
+        await client.query("INSERT INTO ethiosms.users(id,tenant_id,username,email,password_hash,role,enabled) VALUES ($1,$2,$3,$4,$5,'user',true)",[userId,tenantId,username,email,passwordHash]);
+        await client.query("INSERT INTO ethiosms.sessions(token_hash,tenant_id,user_id,expires_at) VALUES ($1,$2,$3,now()+interval '8 hours')",[digest(raw),tenantId,userId]);
+        await client.query("INSERT INTO ethiosms.audit_events(id,tenant_id,actor_user_id,action,resource_id) VALUES ($1,$2,$3,'account.self_registered',$4)",[randomUUID(),tenantId,userId,userId]);
+        return {id:userId,username,email,role:'user' as const};
+      });
+      res.cookie(cookieName,raw,{...cookieOptions,maxAge:8*60*60*1000});
+      res.status(201).json({status:'created',user});
+    }catch(error){
+      if((error as {code?:string}).code==='23505'){res.status(409).json({error:'An account with this email already exists'});return;}
+      throw error;
+    }
+  });
   router.post('/auth/login',async(req,res)=>{
     const identifier=req.body?.identifier??req.body?.email??req.body?.username;
     const username=typeof identifier==='string'?identifier.trim().toLowerCase():'';
