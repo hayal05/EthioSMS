@@ -2395,3 +2395,9 @@ th {
   .public-contact { padding: 54px 16px; }
   .public-footer { padding-left: 16px; padding-right: 16px; }
 }
+
+.public-brand-copy { display: flex; flex-direction: column; gap: 4px; }
+.public-brand-copy strong { display: block; color: #173425; font-size: inherit; font-weight: inherit; line-height: 1; }
+.public-brand-copy strong > span { color: #398052; }
+.public-brand-footer .public-brand-copy strong { color: #eef7f0; }
+.public-brand-footer .public-brand-copy strong > span { color: #a9d3b5; }
