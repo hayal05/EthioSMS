@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { api } from "./api";
 import { Developer } from "./Developer";
 import { Brand, Icon } from "./ui";
+import { Landing } from "./Landing";
 interface User {
   id: string;
   username: string;
@@ -17,6 +18,7 @@ export function Accounts({
 }) {
   const [user, setUser] = useState<User | null>(null),
     [mode, setMode] = useState<Mode>("login");
+  const [showAuth, setShowAuth] = useState(false);
   const [username, setUsername] = useState(""),
     [password, setPassword] = useState(""),
     [confirmPassword, setConfirmPassword] = useState("");
@@ -41,7 +43,10 @@ export function Accounts({
     void api("/auth/setup/status")
       .then((result) => {
         setSetupAvailable(!!result.setupAvailable);
-        if (result.setupRequired) setMode("initial");
+        if (result.setupRequired) {
+          setMode("initial");
+          setShowAuth(true);
+        }
       })
       .catch((error) => setNotice(error.message))
       .finally(() => setCheckingSetup(false));
@@ -135,7 +140,19 @@ export function Accounts({
           : "Welcome back";
   return (
     <>
-      {!user && (
+      {!user && !showAuth && (
+        <Landing
+          onSignIn={() => {
+            setMode("login");
+            setShowAuth(true);
+          }}
+          onGetStarted={() => {
+            setMode(setupAvailable ? "initial" : "register");
+            setShowAuth(true);
+          }}
+        />
+      )}
+      {!user && showAuth && (
         <div className="auth-layout">
           <aside className="auth-story">
             <Brand />
@@ -174,6 +191,7 @@ export function Accounts({
             <p className="auth-foot">EthioSMS · Messaging infrastructure</p>
           </aside>
           <main className="auth-main">
+            <button className="auth-home-link" onClick={() => setShowAuth(false)}>← Back to homepage</button>
             <section className="accounts auth-card" aria-label="Pilot accounts">
               <span className="eyebrow">WELCOME TO ETHIOSMS</span>
               <h2>{title}</h2>
