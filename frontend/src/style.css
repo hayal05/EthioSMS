@@ -15,7 +15,7 @@
   --green: #16a34a;
   --line: #e5e9ee;
   --muted: #738091;
-  --nav: #101b26;
+  --nav: #16a34a;
 }
 * {
   box-sizing: border-box;
@@ -180,7 +180,7 @@ svg {
 }
 .brand-light {
   font-weight: 350;
-  color: #c1cbd4;
+  color: #dcfce7;
 }
 .brand small {
   display: block;
@@ -188,7 +188,7 @@ svg {
   font-weight: 500;
   letter-spacing: 2px;
   margin-top: 7px;
-  color: #8195a7;
+  color: #dcfce7;
 }
 .sidebar {
   position: fixed;
@@ -198,13 +198,13 @@ svg {
   padding: 28px 18px 0;
   display: flex;
   flex-direction: column;
-  color: #a0afbf;
+  color: #f0fdf4;
   z-index: 30;
 }
 .sidebar .brand-symbol {
   background: transparent;
   box-shadow: none;
-  color: #4ade80;
+  color: #ffffff;
 }
 .sidebar > .brand {
   margin: 0 12px 32px;
@@ -214,7 +214,7 @@ svg {
   flex: 1;
   min-height: 0;
   scrollbar-width: thin;
-  scrollbar-color: #506373 transparent;
+  scrollbar-color: #86d9a3 transparent;
 }
 .sidebar nav::-webkit-scrollbar {
   width: 4px;
@@ -223,7 +223,7 @@ svg {
   background: transparent;
 }
 .sidebar nav::-webkit-scrollbar-thumb {
-  background: #506373;
+  background: #86d9a3;
   border-radius: 4px;
 }
 .nav-group {
@@ -235,7 +235,7 @@ svg {
   font-weight: 400;
   text-transform: none;
   letter-spacing: 0;
-  color: #94a7b8;
+  color: #dcfce7;
   padding: 0 15px;
   margin-bottom: 10px;
 }
@@ -244,7 +244,7 @@ svg {
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #9aabbd;
+  color: #f0fdf4;
   text-decoration: none;
   padding: 12px 14px;
   border-left: 2px solid transparent;
@@ -255,16 +255,16 @@ svg {
 }
 .nav-group a:hover {
   color: white;
-  background: #1a2a38;
+  background: #15803d;
 }
 .nav-group a.active {
-  background: #ffffff08;
-  border-left-color: #16a34a;
-  color: #e2eee9;
+  background: #15803d;
+  border-left-color: #ffffff;
+  color: #ffffff;
   font-weight: 500;
 }
 .user-profile {
-  border-top: 1px solid #24323e;
+  border-top: 1px solid #86d9a3;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -276,10 +276,10 @@ svg {
   place-items: center;
   width: 32px;
   height: 32px;
-  background: #253949;
+  background: #15803d;
   border: 0;
   border-radius: 50%;
-  color: #b6d6d2;
+  color: #ffffff;
   font-size: 10px;
   flex-shrink: 0;
 }
@@ -294,14 +294,14 @@ svg {
   white-space: nowrap;
   font-size: 11px;
   font-weight: 500;
-  color: #d0dbe4;
+  color: #ffffff;
 }
 .user-profile small {
   font-size: 9px;
-  color: #94a7b8;
+  color: #dcfce7;
 }
 .user-profile .icon-button:hover {
-  background: #253949;
+  background: #15803d;
 }
 .workspace {
   margin-left: 236px;
