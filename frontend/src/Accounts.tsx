@@ -140,22 +140,21 @@ export function Accounts({
           <aside className="auth-story">
             <Brand />
             <div>
-              <span className="eyebrow">BUILT FOR YOUR CONNECTIONS</span>
+              <span className="eyebrow">MESSAGING INFRASTRUCTURE</span>
               <h1>
-                Every message.
+                Messaging operations.
                 <br />
-                One control plane.
+                Under your control.
               </h1>
               <p>
-                Connect your applications, manage SMS delivery, and keep your
-                messaging infrastructure in view.
+                A reliable workspace to manage SMS delivery, monitor integrations, and operate your messaging services.
               </p>
               <div className="auth-terminal">
                 <div>
                   <i />
                   <i />
                   <i />
-                  <span>YOUR NEXT INTEGRATION</span>
+                  <span>API REQUEST · EXAMPLE</span>
                 </div>
                 <code>
                   <span>POST</span> /api/v1/messages
@@ -163,12 +162,12 @@ export function Accounts({
                   <br />
                   {"{"}
                   <br /> "to": "+251…",
-                  <br /> "message": "You’re connected."
+                  <br /> "message": "Your service is ready."
                   <br />
                   {"}"}
                 </code>
                 <small>
-                  <Icon name="terminal" /> One API. Your applications.
+                  <Icon name="terminal" /> Secure API access · SMS delivery
                 </small>
               </div>
             </div>
