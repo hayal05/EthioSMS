@@ -3838,3 +3838,65 @@ td, th { padding-top: 14px; padding-bottom: 14px; }
     width: 100%;
   }
 }
+
+
+/* Keep account identity and sign-out available from the top-right of the console. */
+.topbar-profile {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding-left: 14px;
+  border-left: 1px solid var(--line);
+}
+.topbar-profile .avatar {
+  width: 34px;
+  height: 34px;
+  background: #166534;
+  border: 1px solid #d7eadc;
+  font-size: 10px;
+}
+.topbar-profile-label {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  max-width: 150px;
+}
+.topbar-profile-label strong {
+  overflow: hidden;
+  color: #344354;
+  font-size: 10px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.topbar-profile-label small {
+  color: #82908a;
+  font-size: 9px;
+  white-space: nowrap;
+}
+.topbar-profile .icon-button {
+  color: #718092;
+}
+.topbar-profile .icon-button:hover {
+  color: #166534;
+  background: #f2f8f3;
+}
+@media (max-width: 720px) {
+  .topbar-profile {
+    gap: 5px;
+    padding-left: 8px;
+  }
+  .topbar-profile-label {
+    display: none;
+  }
+  .topbar-profile .avatar {
+    width: 32px;
+    height: 32px;
+  }
+  .topbar-profile .icon-button {
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+  }
+}
