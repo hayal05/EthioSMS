@@ -222,21 +222,6 @@ export function Console({
             </div>
           ))}
         </nav>
-        <div className="user-profile">
-          <span className="avatar">{userLabel.slice(0, 2).toUpperCase()}</span>
-          <div>
-            <strong title={userLabel}>{userLabel}</strong>
-            <small>{admin ? "Master admin" : "Workspace member"}</small>
-          </div>
-          <button
-            className="icon-button"
-            aria-label="Sign out"
-            disabled={busy}
-            onClick={onSignOut}
-          >
-            <Icon name="logout" />
-          </button>
-        </div>
       </aside>
       <div className="workspace">
         <header className="topbar">
@@ -289,6 +274,22 @@ export function Console({
             >
               <Icon name="refresh" />
             </button>
+            <div className="topbar-profile">
+              <span className="avatar">{userLabel.slice(0, 2).toUpperCase()}</span>
+              <div className="topbar-profile-label">
+                <strong title={userLabel}>{userLabel}</strong>
+                <small>{admin ? "Master admin" : "Workspace member"}</small>
+              </div>
+              <button
+                className="icon-button"
+                aria-label="Sign out"
+                title="Sign out"
+                disabled={busy}
+                onClick={onSignOut}
+              >
+                <Icon name="logout" />
+              </button>
+            </div>
           </div>
         </header>
         <main id="content" tabIndex={-1} className="content">
