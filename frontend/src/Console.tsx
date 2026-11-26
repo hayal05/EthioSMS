@@ -363,18 +363,33 @@ export function Overview({
     location.hash = `/${page}`;
     onPage(page);
   };
+  const selectedApplication = applications.find((app) => app.id === selected);
   return (
     <>
       <div className="overview-banner">
-        <div>
+        <div className="overview-welcome">
           <span className="eyebrow">YOUR MESSAGING CONTROL PLANE</span>
           <h2>Good connections start here.</h2>
           <p>Bring your applications and SMS workflows together.</p>
+          <span className="overview-app-context">
+            <Icon name="box" size={13} />
+            {selectedApplication
+              ? `Viewing ${selectedApplication.name}`
+              : "Choose an application to view its activity"}
+          </span>
         </div>
         <button onClick={() => go("messages")}>
           <Icon name="plus" /> New message
         </button>
       </div>
+      <section className="overview-snapshot" aria-label="Workspace snapshot">
+        <div className="overview-section-heading">
+          <div>
+            <h2>Workspace snapshot</h2>
+            <p>Applications, credentials and daily message allowance</p>
+          </div>
+          <span>Current usage</span>
+        </div>
       <div className="metrics">
         {[
           {
@@ -417,15 +432,19 @@ export function Overview({
           </article>
         ))}
       </div>
-      <section className="panel">
+      </section>
+      <section className="panel overview-activity">
         <div className="panel-heading">
           <div>
             <h2>Recent messages</h2>
             <p>Latest activity for the selected application</p>
           </div>
-          <button className="secondary" onClick={() => go("messages")}>
-            View messages <Icon name="arrow" size={14} />
-          </button>
+          <div className="overview-activity-actions">
+            {rows?.length ? <span>{rows.length} latest</span> : null}
+            <button className="secondary" onClick={() => go("messages")}>
+              View all <Icon name="arrow" size={14} />
+            </button>
+          </div>
         </div>
         <Notice>{error}</Notice>
         {!selected ? (

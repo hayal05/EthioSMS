@@ -2852,3 +2852,125 @@ td, th { padding-top: 14px; padding-bottom: 14px; }
     animation-iteration-count: 1 !important;
   }
 }
+
+/* PR2 — focused Overview dashboard refinement; existing palette retained. */
+.overview-banner {
+  align-items: center;
+  gap: 28px;
+}
+.overview-welcome { min-width: 0; }
+.overview-welcome h2 { margin-top: 9px; }
+.overview-app-context {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 15px;
+  padding: 6px 9px;
+  color: #28613c;
+  background: #e5f5e9;
+  border: 1px solid #ccebd5;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.overview-app-context svg { flex: 0 0 auto; }
+.overview-snapshot { margin-bottom: 25px; }
+.overview-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0 1px 13px;
+}
+.overview-section-heading h2 {
+  margin: 0 0 4px;
+  color: #263647;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -.2px;
+}
+.overview-section-heading p {
+  margin: 0;
+  color: #718092;
+  font-size: 10px;
+}
+.overview-section-heading > span {
+  flex: 0 0 auto;
+  color: #718092;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .35px;
+  text-transform: uppercase;
+}
+.overview-snapshot .metrics { margin-bottom: 0; }
+.overview-snapshot .metric {
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+}
+.overview-snapshot .metric > div > span {
+  line-height: 1.4;
+}
+.overview-snapshot .metric strong {
+  overflow-wrap: anywhere;
+}
+.overview-activity { margin-bottom: 22px; }
+.overview-activity .panel-heading {
+  border-bottom-color: #edf0f3;
+}
+.overview-activity-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+}
+.overview-activity-actions > span {
+  color: #82908a;
+  font-size: 9px;
+  white-space: nowrap;
+}
+.overview-activity .table-wrap {
+  margin: 0;
+}
+.overview-activity table th:first-child,
+.overview-activity table td:first-child {
+  padding-left: 23px;
+}
+.overview-activity table th:last-child,
+.overview-activity table td:last-child {
+  padding-right: 23px;
+}
+.overview-activity tbody tr:last-child td { border-bottom: 0; }
+.overview-activity tbody tr:hover { background: #fbfdfb; }
+@media (max-width: 760px) {
+  .overview-banner { gap: 18px; }
+  .overview-app-context { margin-top: 12px; }
+  .overview-section-heading { align-items: flex-start; }
+  .overview-section-heading > span { margin-top: 2px; }
+  .overview-activity .panel-heading {
+    align-items: flex-start;
+    flex-direction: row;
+  }
+  .overview-activity-actions {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+  }
+  .overview-activity table th:first-child,
+  .overview-activity table td:first-child { padding-left: 15px; }
+  .overview-activity table th:last-child,
+  .overview-activity table td:last-child { padding-right: 15px; }
+}
+@media (max-width: 520px) {
+  .overview-section-heading { flex-direction: column; gap: 6px; }
+  .overview-section-heading > span { margin: 0; }
+  .overview-activity .panel-heading { flex-direction: column; }
+  .overview-activity-actions {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
