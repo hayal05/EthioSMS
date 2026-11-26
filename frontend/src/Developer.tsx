@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Console, Overview, Docs, type Page } from "./Console";
-import { Empty, Notice } from "./ui";
+import { Empty, Notice, Modal, Icon } from "./ui";
 import { Campaigns, CampaignReview } from "./Campaigns";
 import { Messages, Operations } from "./Messages";
 import { api } from "./api";
@@ -71,6 +71,8 @@ export function Developer({
     [issued, setIssued] = useState(""),
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false);
+  const [keyDialogOpen, setKeyDialogOpen] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
   const [usage, setUsage] = useState<{
     application_remaining: number;
     tenant_remaining: number;
@@ -232,122 +234,14 @@ export function Developer({
           )}
           {page === "keys" && selected && (
             <>
-              <h2>Application credentials</h2>
-              <p>
-                Issue scoped keys for server-side integrations. Keys are shown
-                only once.
-              </p>
-              <div className="actions">
-                <button
-                  className="secondary"
-                  disabled={busy}
-                  onClick={() =>
-                    void act(async () => {
-                      await api(`/applications/${selected}`, "PATCH", {
-                        enabled: false,
-                      });
-                    })
-                  }
-                >
-                  Disable application
-                </button>
-              </div>
-              {usage && (
-                <p>
-                  {usage.application_remaining} application segments remaining ·{" "}
-                  {usage.tenant_remaining} account segments remaining ·{" "}
-                  {usage.date} (Addis Ababa)
-                </p>
-              )}
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void act(async () => {
-                    const result = await api(
-                      `/applications/${selected}/keys`,
-                      "POST",
-                      { scopes },
-                    );
-                    setIssued(result.apiKey);
-                  });
-                }}
-              >
-                <fieldset>
-                  <legend>Key permissions</legend>
-                  {permissions.map((permission) => (
-                    <label className="permission" key={permission}>
-                      <input
-                        type="checkbox"
-                        checked={scopes.includes(permission)}
-                        onChange={(event) =>
-                          setScopes(
-                            event.target.checked
-                              ? [...scopes, permission]
-                              : scopes.filter((item) => item !== permission),
-                          )
-                        }
-                      />
-                      {permission}
-                    </label>
-                  ))}
-                </fieldset>
-                <button disabled={busy || !scopes.length}>Issue API key</button>
-              </form>
-              {issued && (
-                <div className="token">
-                  <strong>
-                    Shown once. Save this key privately in your server
-                    configuration.
-                  </strong>
-                  <code>{issued}</code>
-                  <button className="secondary" onClick={() => setIssued("")}>
-                    Hide key
-                  </button>
-                </div>
-              )}
-              <ul className="user-list">
-                {keys.map((key) => (
-                  <li key={key.id}>
-                    <span>
-                      <code>{key.prefix}…</code> ·{" "}
-                      {key.revoked_at ? "Revoked" : "Active"}
-                      <small>{key.scopes.join(", ")}</small>
-                    </span>
-                    {!key.revoked_at && (
-                      <span className="actions">
-                        <button
-                          className="secondary"
-                          disabled={busy}
-                          onClick={() =>
-                            void act(async () => {
-                              const result = await api(
-                                `/applications/${selected}/keys/${key.id}/rotate`,
-                                "POST",
-                              );
-                              setIssued(result.apiKey);
-                            })
-                          }
-                        >
-                          Rotate
-                        </button>
-                        <button
-                          className="secondary"
-                          disabled={busy}
-                          onClick={() =>
-                            void act(async () => {
-                              await api(
-                                `/applications/${selected}/keys/${key.id}`,
-                                "DELETE",
-                              );
-                            })
-                          }
-                        >
-                          Revoke
-                        </button>
-                      </span>
-                    )}
-                  </li>
-                ))}
+              <div className="keys-heading"><div><span className="keys-eyebrow">APPLICATION SECURITY</span><h2>API keys</h2><p>Create and manage credentials for <strong>{applications.find((item) => item.id === selected)?.name ?? "this application"}</strong>. Each key has its own permissions.</p></div><button disabled={busy} onClick={() => setKeyDialogOpen(true)}><Icon name="key" size={15} /> Create API key</button></div>
+              <div className="key-summary"><article><span>Active keys</span><strong>{keys.filter((key) => !key.revoked_at).length}</strong><small>Ready to authenticate</small></article><article><span>Revoked keys</span><strong>{keys.filter((key) => !!key.revoked_at).length}</strong><small>No longer accepted</small></article><article><span>Total issued</span><strong>{keys.length}</strong><small>For this application</small></article></div>
+              <div className="key-app-status"><span className={applications.find((item) => item.id === selected)?.enabled ? "key-status-dot is-active" : "key-status-dot"} /><span><strong>{applications.find((item) => item.id === selected)?.enabled ? "Application enabled" : "Application disabled"}</strong><small>API keys are scoped to this application</small></span><button className="secondary" disabled={busy || !applications.find((item) => item.id === selected)?.enabled} onClick={() => void act(async () => { await api("/applications/" + selected, "PATCH", { enabled: false }); })}>Disable application</button></div>
+              {usage && <div className="key-usage-note"><Icon name="activity" size={15} /><span><strong>{usage.application_remaining.toLocaleString()}</strong> application segments remaining</span><span>·</span><span><strong>{usage.tenant_remaining.toLocaleString()}</strong> account segments remaining</span><small>{usage.date} · Addis Ababa</small></div>}
+              {issued && <div className="key-secret" role="status"><div className="key-secret-heading"><span className="key-secret-icon"><Icon name="shield" /></span><div><strong>Your new API key is ready</strong><small>Copy it now. The full key will not be shown again.</small></div></div><code>{issued}</code><div className="key-secret-actions"><button onClick={() => { void navigator.clipboard.writeText(issued).then(() => setCopiedKey(true)).catch(() => setNotice("Clipboard unavailable. Select and copy the key manually.")); }}><Icon name="copy" size={14} /> {copiedKey ? "Copied" : "Copy API key"}</button><button className="secondary" onClick={() => { setIssued(""); setCopiedKey(false); }}>Hide key</button></div></div>}
+              <div className="key-list-heading"><div><h3>Your credentials</h3><p>Only the key prefix is displayed here.</p></div><span>{keys.length} {keys.length === 1 ? "key" : "keys"}</span></div>
+              {keys.length ? <div className="key-list">{keys.map((key) => <article className={key.revoked_at ? "key-item is-revoked" : "key-item"} key={key.id}><div className="key-item-main"><span className="key-item-icon"><Icon name="key" size={17} /></span><div className="key-item-info"><div className="key-item-title"><code>{key.prefix}••••••</code><span className={key.revoked_at ? "key-badge revoked" : "key-badge active"}>{key.revoked_at ? "Revoked" : "Active"}</span></div><div className="key-scopes">{key.scopes.map((scope) => <span key={scope}>{scope}</span>)}</div></div></div>{!key.revoked_at && <div className="key-item-actions"><button className="secondary" disabled={busy} onClick={() => void act(async () => { const result = await api("/applications/" + selected + "/keys/" + key.id + "/rotate", "POST"); setIssued(result.apiKey); setCopiedKey(false); })}>Rotate</button><button className="key-revoke-button" disabled={busy} onClick={() => { if (window.confirm("Revoke this API key? Integrations using it will stop authenticating.")) void act(async () => { await api("/applications/" + selected + "/keys/" + key.id, "DELETE"); }); }}>Revoke</button></div>}</article>)}</div> : <Empty icon="key" title="No API keys yet">Create your first key to connect this application to EthioSMS.</Empty>}
+              {keyDialogOpen && <Modal title="Create an API key" description="Choose only the permissions this integration needs." onClose={() => setKeyDialogOpen(false)}><form className="key-create-form" onSubmit={(event) => { event.preventDefault(); void act(async () => { const result = await api("/applications/" + selected + "/keys", "POST", { scopes }); setIssued(result.apiKey); setCopiedKey(false); setKeyDialogOpen(false); }); }}><div className="key-create-context"><span><Icon name="box" size={16} /></span><div><small>APPLICATION</small><strong>{applications.find((item) => item.id === selected)?.name ?? "Selected application"}</strong></div></div><fieldset className="key-permission-grid"><legend>Permissions</legend>{permissions.map((permission) => <label className="key-permission-option" key={permission}><input type="checkbox" checked={scopes.includes(permission)} onChange={(event) => setScopes(event.target.checked ? [...scopes, permission] : scopes.filter((item) => item !== permission))} /><span><strong>{permission}</strong><small>{permission === "messages:send" ? "Send SMS messages" : permission === "messages:read" ? "Read message status and history" : permission === "otp:request" ? "Request one-time passwords" : permission === "otp:verify" ? "Verify one-time passwords" : "Read usage and quota information"}</small></span></label>)}</fieldset><p className="key-security-hint"><Icon name="shield" size={15} /> Follow least privilege: enable only what your integration requires.</p><div className="key-create-actions"><button type="button" className="secondary" onClick={() => setKeyDialogOpen(false)}>Cancel</button><button disabled={busy || !scopes.length}><Icon name="key" size={14} /> {busy ? "Creating…" : "Create API key"}</button></div></form></Modal>}
               </ul>
             </>
           )}
