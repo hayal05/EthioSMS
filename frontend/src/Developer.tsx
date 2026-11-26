@@ -273,13 +273,18 @@ export function Developer({
             </>
           )}
           {admin && page === "settings" && (
-            <>
-              <h2>Workspace limits</h2>
-              <p>
-                Control daily segment budgets, request rates, and destination
-                prefixes.
-              </p>
+            <section className="workspace-settings" aria-label="Workspace settings">
+              <header className="workspace-settings-heading">
+                <div>
+                  <span className="eyebrow">ADMINISTRATION</span>
+                  <h2>Workspace limits</h2>
+                  <p>Set the usage budgets, request rates, and destination rules for this workspace.</p>
+                </div>
+                <span className="workspace-settings-scope"><Icon name="shield" size={14} /> Admin controls</span>
+              </header>
+
               <form
+                className="workspace-settings-form"
                 onSubmit={(event) => {
                   event.preventDefault();
                   void act(async () => {
@@ -289,39 +294,97 @@ export function Developer({
                         .split(",")
                         .map((value) => value.trim()),
                     });
-                    setNotice("Limits saved.");
+                    setNotice("Workspace limits saved.");
                   });
                 }}
               >
-                {Object.entries(limitLabels).map(([key, label]) => (
-                  <label key={key}>
-                    {label}
+                <section className="settings-group" aria-labelledby="settings-budgets-heading">
+                  <div className="settings-group-heading">
+                    <span className="settings-group-icon"><Icon name="chart" size={17} /></span>
+                    <div>
+                      <h3 id="settings-budgets-heading">Daily segment budgets</h3>
+                      <p>Maximum message segments allowed per day at each level.</p>
+                    </div>
+                  </div>
+                  <div className="settings-fields-grid">
+                    {[
+                      ["global_daily_segments", "Platform budget", "Applies across the entire EthioSMS platform."],
+                      ["tenant_daily_segments", "Workspace budget", "Shared daily allowance for this workspace."],
+                      ["application_daily_segments", "Application budget", "Daily allowance for each application."],
+                    ].map(([key, label, hint]) => (
+                      <label className="settings-field" key={key}>
+                        <span>{label}</span>
+                        <input
+                          type="number"
+                          required
+                          min={0}
+                          max={100000}
+                          value={limits[key] ?? ""}
+                          onChange={(event) => setLimits({ ...limits, [key]: Number(event.target.value) })}
+                        />
+                        <small>{hint}</small>
+                      </label>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="settings-group" aria-labelledby="settings-rates-heading">
+                  <div className="settings-group-heading">
+                    <span className="settings-group-icon"><Icon name="activity" size={17} /></span>
+                    <div>
+                      <h3 id="settings-rates-heading">Request rate limits</h3>
+                      <p>Maximum API requests permitted per minute.</p>
+                    </div>
+                  </div>
+                  <div className="settings-fields-grid">
+                    {[
+                      ["key_requests_per_minute", "Per API key", "Limit for each individual API key."],
+                      ["application_requests_per_minute", "Per application", "Combined limit for an application."],
+                      ["tenant_requests_per_minute", "Per workspace", "Combined limit for this workspace."],
+                      ["global_requests_per_minute", "Platform-wide", "Maximum requests across the platform."],
+                    ].map(([key, label, hint]) => (
+                      <label className="settings-field" key={key}>
+                        <span>{label}</span>
+                        <input
+                          type="number"
+                          required
+                          min={1}
+                          max={10000}
+                          value={limits[key] ?? ""}
+                          onChange={(event) => setLimits({ ...limits, [key]: Number(event.target.value) })}
+                        />
+                        <small>{hint}</small>
+                      </label>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="settings-group settings-destinations" aria-labelledby="settings-destinations-heading">
+                  <div className="settings-group-heading">
+                    <span className="settings-group-icon"><Icon name="globe" size={17} /></span>
+                    <div>
+                      <h3 id="settings-destinations-heading">Allowed destination prefixes</h3>
+                      <p>Restrict which phone-number prefixes applications may send to.</p>
+                    </div>
+                  </div>
+                  <label className="settings-field">
+                    <span>Phone-number prefixes</span>
                     <input
-                      type="number"
                       required
-                      min={key.includes("daily") ? 0 : 1}
-                      max={key.includes("daily") ? 100000 : 10000}
-                      value={limits[key] ?? ""}
-                      onChange={(event) =>
-                        setLimits({
-                          ...limits,
-                          [key]: Number(event.target.value),
-                        })
-                      }
+                      value={prefixes}
+                      placeholder="+251, +1"
+                      onChange={(event) => setPrefixes(event.target.value)}
                     />
+                    <small>Separate multiple prefixes with commas. Example: +251, +1</small>
                   </label>
-                ))}
-                <label>
-                  Allowed prefixes (comma separated)
-                  <input
-                    required
-                    value={prefixes}
-                    onChange={(event) => setPrefixes(event.target.value)}
-                  />
-                </label>
-                <button disabled={busy}>Save limits</button>
+                </section>
+
+                <footer className="workspace-settings-footer">
+                  <span><Icon name="info" size={14} /> Changes are saved to the workspace configuration.</span>
+                  <button disabled={busy}><Icon name="save" size={14} /> {busy ? "Saving…" : "Save changes"}</button>
+                </footer>
               </form>
-            </>
+            </section>
           )}
         </section>
       )}
