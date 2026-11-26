@@ -2650,3 +2650,19 @@ th {
 .key-table th:nth-child(4){width:26%}
 .key-table .key-scopes span{font-size:8px}
 }
+
+
+/* Expandable API-key permissions */
+.key-table th:nth-child(1){width:48%}
+.key-table th:nth-child(2){width:18%}
+.key-table th:nth-child(3){width:34%}
+.key-table tbody tr[tabindex="0"]{cursor:pointer;outline:none}
+.key-table tbody tr[tabindex="0"]:focus-visible{box-shadow:inset 0 0 0 2px #398052}
+.key-table tbody tr.is-expanded{background:#f8fbf8}
+.key-row-hint{margin-left:8px;color:#398052;font-size:9px;font-weight:600;white-space:nowrap}
+.key-permissions-detail td{padding:0 15px 14px!important;background:#f8fbf8}
+.key-permissions-panel{display:flex;align-items:flex-start;gap:16px;padding:12px 14px;border:1px solid #e5eee7;border-radius:7px;background:#fff}
+.key-permissions-panel>strong{flex:0 0 auto;color:#607267;font-size:10px}
+.key-permissions-panel .key-scopes{display:flex;flex-wrap:wrap;gap:6px;margin:0}
+.key-permissions-panel .key-scopes span{font-size:9px}
+@media(max-width:760px){.key-row-hint{margin-left:auto}.key-table td.key-permissions-detail{display:block}.key-table .key-permissions-detail td{grid-column:1/-1;padding:0!important}.key-permissions-panel{flex-direction:column;gap:8px}.key-table .key-permissions-detail td:before{display:none}}
