@@ -26,7 +26,7 @@ export function otpRouter(pool:pg.Pool,config:Config,dispatcher?:Dispatcher){
   router.post('/request',guard('otp:request'),express.json({limit:'4kb'}),async(req,res)=>{
     const identity=res.locals.identity as ApiIdentity,to=normalizePhone(req.body?.to),purpose=req.body?.purpose,key=req.get('Idempotency-Key');
     if(!purposeValid(purpose)||!key||!/^[A-Za-z0-9._:-]{1,128}$/.test(key))throw new AccessError(400,'Purpose and valid Idempotency-Key required');
-    if(config.gateway==='smsgate'&&!config.liveRecipients.includes(to))throw new AccessError(403,'Recipient is not on live allowlist');
+    if(config.gateway==='smsgate'&&!config.liveAllowAnyRecipient&&!config.liveRecipients.includes(to))throw new AccessError(403,'Recipient is not on live allowlist');
     const fingerprint=requestDigest(config.otpSecret!,{to,purpose});
     const result=await transaction(pool,async client=>{
       // Serialize requests for this application, recipient and purpose across processes.

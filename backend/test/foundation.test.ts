@@ -10,6 +10,8 @@ import { loadConfig } from '../src/config.js';
 const token = 'a'.repeat(64);
 test('configuration defaults safe and rejects live or malformed settings', () => {
   assert.equal(loadConfig({}).smsEnabled, false);
+  assert.equal(loadConfig({}).liveAllowAnyRecipient, false);
+  assert.throws(() => loadConfig({ LIVE_SMS_ALLOW_ANY_RECIPIENT:'yes' }));
   for (const env of [{SMS_ENABLED:'true'}, {SMS_ENABLED:'0'}, {SMS_GATEWAY:'smsgate'}, {PORT:'3000x'}, {PORT:'0'}, {NODE_ENV:'production'}, {READINESS_TOKEN:'short'}]) {
     assert.throws(() => loadConfig(env));
   }

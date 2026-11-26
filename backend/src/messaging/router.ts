@@ -36,7 +36,7 @@ export async function submitMessage(pool:pg.Pool,config:Config,identity:Pick<Api
     const ttl=body.expiresInSeconds??3600;
     if(!Number.isInteger(ttl)||ttl<30||ttl>86400)throw new AccessError(400,'Expiry must be 30–86400 seconds');
     if(config.gateway==='smsgate'&&body.mockScenario!==undefined)throw new AccessError(400,'Mock scenarios are unavailable for live messages');
-    if(config.gateway==='smsgate'&&!config.liveRecipients.includes(to))throw new AccessError(403,'Recipient is not on the live pilot allowlist');
+    if(config.gateway==='smsgate'&&!config.liveAllowAnyRecipient&&!config.liveRecipients.includes(to))throw new AccessError(403,'Recipient is not on the live pilot allowlist');
     const scenario=body.mockScenario??'success';
     if(!mockScenarios.includes(scenario))throw new AccessError(400,'Invalid mock scenario');
     const canonical={to,message:body.message,expiresInSeconds:ttl,mockScenario:scenario as MockScenario,mode:config.gateway==='smsgate'?'live':'mock'};

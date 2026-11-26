@@ -328,7 +328,7 @@ export function Operations({ refreshToken = 0 }: { refreshToken?: number }) {
               <article>
                 <span>Live approval</span>
                 <strong>{data.gateway?.liveApproved ? "Approved" : "Not approved"}</strong>
-                <small>{data.gateway?.allowlistCount ?? 0} pilot recipient(s) allowlisted</small>
+                <small>{data.gateway?.allowAnyRecipient ? "Any valid recipient number (operator enabled)" : `${data.gateway?.allowlistCount ?? 0} pilot recipient(s) allowlisted`}</small>
               </article>
             </div>
           </section>
