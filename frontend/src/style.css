@@ -3127,3 +3127,198 @@ td, th { padding-top: 14px; padding-bottom: 14px; }
     margin: 8px 0 0;
   }
 }
+
+
+/* PR4 — clearer application and workspace-access management. */
+.accounts[aria-label="Developer applications"] > h2,
+.accounts:not([aria-label]) > h2 {
+  margin-bottom: 7px;
+  color: #263647;
+  font-size: 16px;
+  letter-spacing: -.25px;
+}
+.accounts[aria-label="Developer applications"] > p,
+.accounts:not([aria-label]) > p {
+  max-width: 68ch;
+  margin-bottom: 18px;
+  color: #718092;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.accounts[aria-label="Developer applications"] > form {
+  align-items: flex-end;
+  gap: 12px;
+  padding: 16px;
+  margin: 20px 0 22px;
+  border: 1px solid #e7ece9;
+  border-radius: 10px;
+  background: #f8faf9;
+}
+.accounts[aria-label="Developer applications"] > form label {
+  min-width: min(100%, 240px);
+  gap: 6px;
+  color: #405064;
+  font-size: 10px;
+  font-weight: 650;
+}
+.accounts[aria-label="Developer applications"] > form input {
+  min-height: 39px;
+  background: #fff;
+}
+.accounts[aria-label="Developer applications"] > form button {
+  min-height: 39px;
+  white-space: nowrap;
+}
+.accounts[aria-label="Developer applications"] > .user-list {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+}
+.accounts[aria-label="Developer applications"] > .user-list > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 16px;
+  border: 1px solid #e7ece9;
+  border-radius: 10px;
+  background: #fff;
+  transition: border-color .16s ease, background-color .16s ease;
+}
+.accounts[aria-label="Developer applications"] > .user-list > li:hover {
+  border-color: #cbdccf;
+  background: #fbfdfb;
+}
+.accounts[aria-label="Developer applications"] > .user-list > li > span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.accounts[aria-label="Developer applications"] > .user-list > li strong {
+  color: #304052;
+  font-size: 12px;
+  font-weight: 650;
+}
+.accounts[aria-label="Developer applications"] > .user-list > li small {
+  margin: 0;
+  color: #7a8793;
+  font-size: 10px;
+}
+.accounts[aria-label="Developer applications"] > .user-list > li button {
+  flex: 0 0 auto;
+  min-height: 33px;
+  padding: 7px 11px;
+  font-size: 10px;
+}
+.accounts:not([aria-label]) > form {
+  align-items: flex-end;
+  padding: 16px;
+  margin: 19px 0;
+  border: 1px solid #e7ece9;
+  border-radius: 10px;
+  background: #f8faf9;
+}
+.accounts:not([aria-label]) > form label {
+  min-width: min(100%, 230px);
+  color: #405064;
+  font-size: 10px;
+  font-weight: 650;
+}
+.accounts:not([aria-label]) > form input {
+  min-height: 39px;
+  background: #fff;
+}
+.accounts:not([aria-label]) > form button {
+  min-height: 39px;
+  white-space: nowrap;
+}
+.accounts:not([aria-label]) > .user-list {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0 0;
+}
+.accounts:not([aria-label]) > .user-list > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 15px;
+  border: 1px solid #e7ece9;
+  border-radius: 9px;
+  background: #fff;
+}
+.accounts:not([aria-label]) > .user-list > li > span:first-child {
+  color: #344354;
+  font-size: 11px;
+  font-weight: 600;
+}
+.accounts:not([aria-label]) > .user-list .actions {
+  justify-content: flex-end;
+  gap: 7px;
+}
+.accounts:not([aria-label]) > .user-list .actions button {
+  min-height: 32px;
+  padding: 6px 10px;
+  font-size: 9px;
+}
+.accounts:not([aria-label]) .token {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0;
+  padding: 16px;
+  border-color: #cfe5d4;
+  border-radius: 10px;
+  background: #f5faf6;
+}
+.accounts:not([aria-label]) .token strong {
+  color: #365b42;
+  font-size: 10px;
+}
+.accounts:not([aria-label]) .token code {
+  display: block;
+  margin: 0;
+  padding: 11px 12px;
+  border: 1px solid #e1ebe3;
+  border-radius: 7px;
+  background: #fff;
+  color: #344354;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.accounts:not([aria-label]) .token button {
+  justify-self: start;
+  min-height: 32px;
+  font-size: 10px;
+}
+@media (max-width: 640px) {
+  .accounts[aria-label="Developer applications"] > form,
+  .accounts:not([aria-label]) > form {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 13px;
+  }
+  .accounts[aria-label="Developer applications"] > form label,
+  .accounts:not([aria-label]) > form label {
+    min-width: 0;
+    width: 100%;
+  }
+  .accounts[aria-label="Developer applications"] > form button,
+  .accounts:not([aria-label]) > form button {
+    width: 100%;
+  }
+  .accounts[aria-label="Developer applications"] > .user-list > li,
+  .accounts:not([aria-label]) > .user-list > li {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .accounts[aria-label="Developer applications"] > .user-list > li button {
+    width: 100%;
+  }
+  .accounts:not([aria-label]) > .user-list .actions {
+    width: 100%;
+  }
+  .accounts:not([aria-label]) > .user-list .actions button {
+    flex: 1;
+  }
+}
