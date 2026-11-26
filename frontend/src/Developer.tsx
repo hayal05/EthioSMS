@@ -300,7 +300,7 @@ export function Developer({
               >
                 <section className="settings-group" aria-labelledby="settings-budgets-heading">
                   <div className="settings-group-heading">
-                    <span className="settings-group-icon"><Icon name="chart" size={17} /></span>
+                    <span className="settings-group-icon"><Icon name="activity" size={17} /></span>
                     <div>
                       <h3 id="settings-budgets-heading">Daily segment budgets</h3>
                       <p>Maximum message segments allowed per day at each level.</p>
@@ -361,7 +361,7 @@ export function Developer({
 
                 <section className="settings-group settings-destinations" aria-labelledby="settings-destinations-heading">
                   <div className="settings-group-heading">
-                    <span className="settings-group-icon"><Icon name="globe" size={17} /></span>
+                    <span className="settings-group-icon"><Icon name="phone" size={17} /></span>
                     <div>
                       <h3 id="settings-destinations-heading">Allowed destination prefixes</h3>
                       <p>Restrict which phone-number prefixes applications may send to.</p>
@@ -380,8 +380,8 @@ export function Developer({
                 </section>
 
                 <footer className="workspace-settings-footer">
-                  <span><Icon name="info" size={14} /> Changes are saved to the workspace configuration.</span>
-                  <button disabled={busy}><Icon name="save" size={14} /> {busy ? "Saving…" : "Save changes"}</button>
+                  <span><Icon name="shield" size={14} /> Changes are saved to the workspace configuration.</span>
+                  <button disabled={busy}><Icon name="check" size={14} /> {busy ? "Saving…" : "Save changes"}</button>
                 </footer>
               </form>
             </section>
