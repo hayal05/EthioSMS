@@ -14,6 +14,7 @@ export interface Config {
   smsEnabled: boolean;
   liveApproved:boolean;
   liveRecipients:string[];
+  liveAllowAnyRecipient:boolean;
   smsGateToken?:string;
   smsGateUsername?:string;
   smsGatePassword?:string;
@@ -28,13 +29,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   if (!/^\d+$/.test(port) || Number(port) < 1 || Number(port) > 65535) throw new Error('Invalid PORT');
   const gateway=env.SMS_GATEWAY??'mock';
   if(!['mock','smsgate'].includes(gateway))throw new Error('Invalid SMS_GATEWAY');
-  if(!['true','false'].includes(env.SMS_ENABLED??'false')||!['true','false'].includes(env.LIVE_SMS_APPROVED??'false'))throw new Error('Invalid live SMS flag');
-  const smsEnabled=env.SMS_ENABLED==='true',liveApproved=env.LIVE_SMS_APPROVED==='true';
+  if(!['true','false'].includes(env.SMS_ENABLED??'false')||!['true','false'].includes(env.LIVE_SMS_APPROVED??'false')||!['true','false'].includes(env.LIVE_SMS_ALLOW_ANY_RECIPIENT??'false'))throw new Error('Invalid live SMS flag');
+  const smsEnabled=env.SMS_ENABLED==='true',liveApproved=env.LIVE_SMS_APPROVED==='true',liveAllowAnyRecipient=env.LIVE_SMS_ALLOW_ANY_RECIPIENT==='true';
   let liveRecipients:string[]=[];
   try{liveRecipients=env.LIVE_SMS_RECIPIENTS?env.LIVE_SMS_RECIPIENTS.split(',').map(normalizePhone):[];}catch{throw new Error('Invalid LIVE_SMS_RECIPIENTS');}
   const smsGateSim=Number(env.SMSGATE_SIM??'1');if(![1,2,3].includes(smsGateSim))throw new Error('Invalid SMSGATE_SIM');
   if(gateway==='mock'&&smsEnabled)throw new Error('Mock mode cannot enable live SMS');
-  if(gateway==='smsgate'&&(!smsEnabled||!liveApproved||!liveRecipients.length||!env.PAYLOAD_ENCRYPTION_KEY||!env.SMSGATE_DEVICE_ID||!(/^[a-zA-Z0-9_-]{1,100}$/.test(env.SMSGATE_DEVICE_ID))||!(env.SMSGATE_TOKEN||(env.SMSGATE_USERNAME&&env.SMSGATE_PASSWORD))))throw new Error('Live gateway requires explicit approval, allowlist, encryption, device and credentials');
+  if(gateway==='smsgate'&&(!smsEnabled||!liveApproved||(!liveAllowAnyRecipient&&!liveRecipients.length)||!env.PAYLOAD_ENCRYPTION_KEY||!env.SMSGATE_DEVICE_ID||!(/^[a-zA-Z0-9_-]{1,100}$/.test(env.SMSGATE_DEVICE_ID))||!(env.SMSGATE_TOKEN||(env.SMSGATE_USERNAME&&env.SMSGATE_PASSWORD))))throw new Error('Live gateway requires explicit approval, recipient policy, encryption, device and credentials');
   const trustProxyHops=env.TRUST_PROXY_HOPS??'0';
   if (!/^[01]$/.test(trustProxyHops)) throw new Error('TRUST_PROXY_HOPS must be 0 or 1');
   let databaseUrl: string | undefined;
@@ -60,5 +61,5 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const token = env.READINESS_TOKEN;
   if (token && (token.length < 32 || token.trim() !== token || /\s/.test(token))) throw new Error('READINESS_TOKEN must be at least 32 characters without whitespace');
   if (nodeEnv === 'production' && !token) throw new Error('READINESS_TOKEN is required in production');
-  return { nodeEnv: nodeEnv as Config['nodeEnv'], port: Number(port), trustProxyHops:Number(trustProxyHops), readinessToken: token || undefined, databaseUrl, payloadEncryptionKey,otpSecret,otpTtl,otpCooldown,otpAttempts, gateway:gateway as Config['gateway'],smsEnabled,liveApproved,liveRecipients,smsGateToken:env.SMSGATE_TOKEN,smsGateUsername:env.SMSGATE_USERNAME,smsGatePassword:env.SMSGATE_PASSWORD,smsGateDeviceId:env.SMSGATE_DEVICE_ID,smsGateSim };
+  return { nodeEnv: nodeEnv as Config['nodeEnv'], port: Number(port), trustProxyHops:Number(trustProxyHops), readinessToken: token || undefined, databaseUrl, payloadEncryptionKey,otpSecret,otpTtl,otpCooldown,otpAttempts, gateway:gateway as Config['gateway'],smsEnabled,liveApproved,liveRecipients,liveAllowAnyRecipient,smsGateToken:env.SMSGATE_TOKEN,smsGateUsername:env.SMSGATE_USERNAME,smsGatePassword:env.SMSGATE_PASSWORD,smsGateDeviceId:env.SMSGATE_DEVICE_ID,smsGateSim };
 }
