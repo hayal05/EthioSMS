@@ -1,0 +1,131 @@
+import assert from 'node:assert/strict';
+import type { TestContext } from 'node:test';
+import type pg from 'pg';
+import request from 'supertest';
+import { randomUUID } from 'node:crypto';
+import { createApp } from '../src/app.js';
+import { loadConfig } from '../src/config.js';
+import { digest,token } from '../src/auth/security.js';
+import { authenticateKey,enforceApiRate,issueKey } from '../src/developer/keys.js';
+import { reserveMessage,usage } from '../src/developer/quotas.js';
+import type { StoredMessageInput } from '../src/db/messages.js';
+
+export async function developerTests(pool:pg.Pool,t:TestContext) {
+  const app=createApp(loadConfig({}),'/nonexistent',undefined,pool);
+  async function fixture(username:string) {
+    const tenant=randomUUID(),user=randomUUID(),raw=token();
+    await pool.query('INSERT INTO ethiosms.tenants(id,name,enabled) VALUES ($1,$2,true)',[tenant,username]);
+    await pool.query('INSERT INTO ethiosms.users(id,tenant_id,username,enabled) VALUES ($1,$2,$3,true)',[user,tenant,username]);
+    await pool.query("INSERT INTO ethiosms.sessions(token_hash,tenant_id,user_id,expires_at) VALUES ($1,$2,$3,now()+interval '1 hour')",[digest(raw),tenant,user]);
+    return {tenant,user,headers:{Cookie:`ethiosms_session=${raw}`,'X-EthioSMS-Request':'1'}};
+  }
+  const a=await fixture('developer_a'),b=await fixture('developer_b');
+  const administrator=(await pool.query("SELECT id,tenant_id FROM ethiosms.users WHERE role='admin' LIMIT 1")).rows[0];
+  const adminToken=token();await pool.query("INSERT INTO ethiosms.sessions(token_hash,tenant_id,user_id,expires_at) VALUES ($1,$2,$3,now()+interval '1 hour')",[digest(adminToken),administrator.tenant_id,administrator.id]);
+  const adminHeaders={Cookie:`ethiosms_session=${adminToken}`,'X-EthioSMS-Request':'1'};
+  let appA='',appA2='',appB='',rawKey='';
+  await t.test('applications, key secrecy, isolation, scopes, rotation and revocation',async()=>{
+    await request(app).get('/api/applications').expect(401);
+    const created=await request(app).post('/api/applications').set(a.headers).send({name:'ERP'}).expect(201);
+    appA=created.body.application.id;assert.equal(created.body.application.enabled,false);
+    appA2=(await request(app).post('/api/applications').set(a.headers).send({name:'Restaurant'}).expect(201)).body.application.id;
+    appB=(await request(app).post('/api/applications').set(b.headers).send({name:'ERP'}).expect(201)).body.application.id;
+    await request(app).post('/api/applications').set(a.headers).send({name:'erp'}).expect(409);
+    await request(app).get(`/api/applications/${appA}/keys`).set(b.headers).expect(404);
+    await request(app).patch(`/api/applications/${appA}`).set(b.headers).send({name:'Stolen'}).expect(404);
+    await request(app).post(`/api/applications/${appA}/keys`).set(b.headers).send({scopes:['usage:read']}).expect(404);
+    await request(app).patch(`/api/applications/${appA}`).set(a.headers).send({enabled:true}).expect(400);
+    await request(app).post(`/api/applications/${appA}/keys`).set(a.headers).send({scopes:['admin']}).expect(400);
+    const issued=await request(app).post(`/api/applications/${appA}/keys`).set(a.headers).send({scopes:['usage:read']}).expect(201);
+    const oldKey=issued.body.apiKey;
+    await request(app).get('/api/v1/usage').set('Authorization',`Bearer ${oldKey}`).expect(401);
+    for(const id of [appA,appA2,appB])await request(app).patch(`/api/admin/applications/${id}`).set(adminHeaders).send({enabled:true}).expect(200);
+    await request(app).get('/api/v1/usage').set('Authorization',`Bearer ${oldKey}`).expect(200);
+    const stored=(await pool.query('SELECT key_hash,prefix FROM ethiosms.api_keys WHERE id=$1',[issued.body.id])).rows[0];
+    assert.equal(stored.key_hash,digest(oldKey));assert.ok(!stored.prefix.includes(oldKey));
+    const listed=await request(app).get(`/api/applications/${appA}/keys`).set(a.headers).expect(200);
+    assert.ok(!JSON.stringify(listed.body).includes(oldKey));assert.ok(!JSON.stringify(listed.body).includes(stored.key_hash));
+    const wrongScope=await request(app).post(`/api/applications/${appA}/keys`).set(a.headers).send({scopes:['messages:send']}).expect(201);
+    await request(app).get('/api/v1/usage').set('Authorization',`Bearer ${wrongScope.body.apiKey}`).expect(403);
+    await request(app).post(`/api/applications/${appA}/keys/${issued.body.id}/rotate`).set(b.headers).expect(404);
+    const rotated=await request(app).post(`/api/applications/${appA}/keys/${issued.body.id}/rotate`).set(a.headers).expect(201);
+    rawKey=rotated.body.apiKey;
+    await request(app).get('/api/v1/usage').set('Authorization',`Bearer ${oldKey}`).expect(401);
+    await request(app).get('/api/v1/usage').set('Authorization',`Bearer ${rawKey}`).expect(200);
+    await request(app).delete(`/api/applications/${appA}/keys/${wrongScope.body.id}`).set(b.headers).expect(404);
+    await request(app).delete(`/api/applications/${appA}/keys/${wrongScope.body.id}`).set(a.headers).expect(204);
+    await assert.rejects(authenticateKey(pool,wrongScope.body.apiKey,'messages:send'),{status:401});
+    await request(app).patch(`/api/applications/${appA}`).set(a.headers).send({enabled:false}).expect(200);
+    await assert.rejects(authenticateKey(pool,rawKey,'usage:read'),{status:401});
+    await request(app).patch(`/api/admin/applications/${appA}`).set(adminHeaders).send({enabled:true}).expect(200);
+    await request(app).patch(`/api/admin/users/${a.user}`).set(adminHeaders).send({enabled:false}).expect(200);
+    await assert.rejects(authenticateKey(pool,rawKey,'usage:read'),{status:401});
+    await request(app).patch(`/api/admin/users/${a.user}`).set(adminHeaders).send({enabled:true}).expect(200);
+    assert.equal((await authenticateKey(pool,rawKey,'usage:read')).tenant_id,a.tenant);
+  });
+  await t.test('active key caps and concurrent rotation are atomic; settings are admin-only',async()=>{
+    const created=await Promise.allSettled(Array.from({length:8},()=>issueKey(pool,a.tenant,appA,['usage:read'])));
+    assert.equal(created.filter(result=>result.status==='fulfilled').length,4);
+    for(const result of created)if(result.status==='rejected')assert.equal(result.reason.status,409);
+    const current=await authenticateKey(pool,rawKey,'usage:read');
+    const rotations=await Promise.allSettled([issueKey(pool,a.tenant,appA,undefined,current.key_id),issueKey(pool,a.tenant,appA,undefined,current.key_id)]);
+    const success=rotations.filter(result=>result.status==='fulfilled');assert.equal(success.length,1);
+    await assert.rejects(authenticateKey(pool,rawKey,'usage:read'),{status:401});
+    rawKey=(success[0] as PromiseFulfilledResult<Awaited<ReturnType<typeof issueKey>>>).value.apiKey;
+    await request(app).get('/api/admin/limits').set(b.headers).expect(403);
+    const settings=(await request(app).get('/api/admin/limits').set(adminHeaders).expect(200)).body;
+    await request(app).patch('/api/admin/limits').set(b.headers).send(settings).expect(403);
+    await request(app).patch('/api/admin/limits').set(adminHeaders).send({...settings,global_daily_segments:-1}).expect(400);
+    await request(app).patch('/api/admin/limits').set(adminHeaders).send({...settings,allowed_destination_prefixes:['+']}).expect(400);
+    await request(app).patch('/api/admin/limits').set(adminHeaders).send(settings).expect(200);
+  });
+  await t.test('parallel requests cannot exceed key, application, account or global rate limits',async()=>{
+    const identity=await authenticateKey(pool,rawKey,'usage:read');
+    for(const field of ['key_requests_per_minute','application_requests_per_minute','tenant_requests_per_minute','global_requests_per_minute']) {
+      await pool.query('TRUNCATE ethiosms.api_rate_limits');
+      await pool.query('UPDATE ethiosms.settings SET key_requests_per_minute=100,application_requests_per_minute=100,tenant_requests_per_minute=100,global_requests_per_minute=100');
+      await pool.query(`UPDATE ethiosms.settings SET ${field}=2`);
+      const results=await Promise.allSettled(Array.from({length:8},()=>enforceApiRate(pool,identity)));
+      assert.equal(results.filter(result=>result.status==='fulfilled').length,2,field);
+      for(const result of results)if(result.status==='rejected')assert.equal(result.reason.status,429);
+    }
+    await pool.query('TRUNCATE ethiosms.api_rate_limits');
+    await pool.query('UPDATE ethiosms.settings SET key_requests_per_minute=20,application_requests_per_minute=30,tenant_requests_per_minute=60,global_requests_per_minute=120');
+  });
+  let sequence=0;
+  const input=(applicationId=appA,tenantId=a.tenant):StoredMessageInput=>({tenantId,applicationId,idempotencyKey:`quota-${++sequence}`,requestHash:'c'.repeat(64),kind:'notification',payloadCiphertext:'encrypted-test-fixture',expiresAt:new Date(Date.now()+3600000),recipients:[{phoneNumber:'0912345678',segments:1}]});
+  await t.test('atomic reservations rollback jobs and counters, and never double-charge duplicates',async()=>{
+    await pool.query('UPDATE ethiosms.settings SET global_daily_segments=4,tenant_daily_segments=4,application_daily_segments=4');
+    const submitted=Array.from({length:10},()=>input());
+    const results=await Promise.allSettled(submitted.map(item=>reserveMessage(pool,item)));
+    assert.equal(results.filter(result=>result.status==='fulfilled').length,4);
+    for(const result of results)if(result.status==='rejected')assert.equal(result.reason.status,429);
+    const counters=(await pool.query('SELECT scope,reserved_segments,used_segments FROM ethiosms.usage_counters')).rows;
+    assert.equal(counters.length,3);assert.ok(counters.every(row=>row.reserved_segments==='4'&&row.used_segments==='0'));
+    const jobs=await pool.query('SELECT count(*) FROM ethiosms.message_jobs WHERE tenant_id=$1',[a.tenant]);assert.equal(jobs.rows[0].count,'4');
+    const successIndex=results.findIndex(result=>result.status==='fulfilled');
+    const original=submitted[successIndex]!;
+    const duplicate=await Promise.all([reserveMessage(pool,original),reserveMessage(pool,original)]);assert.equal(duplicate[0],duplicate[1]);
+    await assert.rejects(reserveMessage(pool,{...original,requestHash:'d'.repeat(64)}),/Idempotency conflict/);
+    const usageA=await usage(pool,a.tenant,appA);assert.equal(usageA.application_remaining,0);assert.equal(usageA.timezone,'Africa/Addis_Ababa');
+    const usageB=await usage(pool,b.tenant,appB);assert.equal(usageB.application_reserved,0);assert.equal(usageB.tenant_reserved,0);
+    await assert.rejects(reserveMessage(pool,input(appA2)),{status:429});
+    await assert.rejects(reserveMessage(pool,input(appB,b.tenant)),{status:429});
+  });
+  await t.test('account/application boundaries and destination restrictions apply independently',async()=>{
+    const resetUsage=()=>pool.query('TRUNCATE ethiosms.usage_reservations,ethiosms.usage_counters');
+    await resetUsage();await pool.query('UPDATE ethiosms.settings SET global_daily_segments=100,tenant_daily_segments=2,application_daily_segments=100');
+    await reserveMessage(pool,input());await reserveMessage(pool,input(appA2));
+    await assert.rejects(reserveMessage(pool,input(appA2)),{status:429});
+    await reserveMessage(pool,input(appB,b.tenant));
+    await resetUsage();await pool.query('UPDATE ethiosms.settings SET global_daily_segments=100,tenant_daily_segments=100,application_daily_segments=2');
+    await reserveMessage(pool,input());await reserveMessage(pool,input());await assert.rejects(reserveMessage(pool,input()),{status:429});await reserveMessage(pool,input(appA2));
+    await assert.rejects(reserveMessage(pool,{...input(),recipients:[{phoneNumber:'+14155552671',segments:1}]}),{status:400});
+    await pool.query("UPDATE ethiosms.settings SET allowed_destination_prefixes=ARRAY['+1']");
+    await reserveMessage(pool,{...input(appA2),recipients:[{phoneNumber:'+14155552671',segments:1}]});
+    await assert.rejects(reserveMessage(pool,input(appA2)),{status:400});
+    await resetUsage();await pool.query("UPDATE ethiosms.settings SET global_daily_segments=200,tenant_daily_segments=50,application_daily_segments=50,allowed_destination_prefixes=ARRAY['+251']");
+    const invalid=input();invalid.recipients.push({phoneNumber:'invalid',segments:1});await assert.rejects(reserveMessage(pool,invalid),{status:400});
+    assert.equal((await pool.query('SELECT count(*) FROM ethiosms.usage_counters')).rows[0].count,'0');
+  });
+}

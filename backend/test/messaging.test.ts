@@ -1,0 +1,40 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { estimateSegments } from '../src/messaging/segments.js';
+import { encryptPayload,decryptPayload,requestDigest } from '../src/messaging/crypto.js';
+import { MockGateway } from '../src/messaging/mock.js';
+import { loadConfig } from '../src/config.js';
+test('GSM-7, extension characters, Amharic, and emoji use correct segment boundaries',()=>{
+  assert.equal(estimateSegments('a'.repeat(160)).segments,1);
+  assert.equal(estimateSegments('a'.repeat(161)).segments,2);
+  assert.equal(estimateSegments('^'.repeat(80)).segments,1);
+  assert.equal(estimateSegments('^'.repeat(81)).segments,2);
+  assert.equal(estimateSegments('a'.repeat(152)+'^'+'a'.repeat(152)).segments,3);
+  assert.deepEqual(estimateSegments('ሀ'.repeat(70)),{encoding:'UTF-16',units:70,segments:1});
+  assert.equal(estimateSegments('ሀ'.repeat(71)).segments,2);
+  assert.equal(estimateSegments('😀'.repeat(35)).segments,1);
+  assert.equal(estimateSegments('😀'.repeat(36)).segments,2);
+  assert.equal(estimateSegments('ሀ'.repeat(66)+'😀'+'ሀ'.repeat(66)).segments,3);
+  for(const value of ['', '   ','\u0000test','\ud800','a'.repeat(1531),'ሀ'.repeat(671)])assert.throws(()=>estimateSegments(value));
+});
+test('payload encryption authenticates context/content and request hashes are keyed and deterministic',()=>{
+  const key='1'.repeat(64),payload={message:'Private message'},context='tenant:application:request';
+  const encrypted=encryptPayload(key,context,payload);
+  assert.notEqual(encrypted,encryptPayload(key,context,payload));assert.ok(!encrypted.includes(payload.message));
+  assert.deepEqual(decryptPayload(key,context,encrypted),payload);
+  assert.throws(()=>decryptPayload(key,'different context',encrypted));
+  assert.throws(()=>decryptPayload('2'.repeat(64),context,encrypted));
+  const parts=encrypted.split('.');parts[3]=Buffer.from('tampered').toString('base64url');assert.throws(()=>decryptPayload(key,context,parts.join('.')));
+  assert.equal(requestDigest(key,payload),requestDigest(key,payload));assert.notEqual(requestDigest(key,payload),requestDigest('2'.repeat(64),payload));
+  assert.throws(()=>loadConfig({PAYLOAD_ENCRYPTION_KEY:'invalid'}));
+});
+test('mock adapter models acceptance, rejection, unknown timeout, offline retry and delayed status without telephony',async()=>{
+  let now=1000;const gateway=new MockGateway(()=>now);
+  assert.deepEqual(await gateway.submit({requestId:'fixture',scenario:'success'}),{outcome:'accepted',providerId:'mock_fixture'});
+  assert.equal((await gateway.submit({requestId:'fixture',scenario:'rejected'})).outcome,'rejected');
+  assert.equal((await gateway.submit({requestId:'fixture',scenario:'timeout'})).outcome,'unknown');
+  assert.equal((await gateway.submit({requestId:'fixture',scenario:'offline'})).outcome,'retryable');
+  assert.equal(await gateway.status({scenario:'delayed',submittedAt:1000}),'accepted');now=31000;
+  assert.equal(await gateway.status({scenario:'delayed',submittedAt:1000}),'delivered');
+  assert.equal(await gateway.status({scenario:'timeout',submittedAt:1000}),'unknown');
+});
