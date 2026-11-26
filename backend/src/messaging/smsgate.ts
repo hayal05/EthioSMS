@@ -12,7 +12,7 @@ export class SmsGate implements Gateway {
     return response;
   }
   async submit(request:{requestId:string;scenario:MockScenario;to:string;message:string;expiresAt?:Date;priority?:number}):Promise<MockResult>{
-    if(!this.config.smsEnabled||!this.config.liveApproved||!this.config.liveRecipients.includes(request.to))return {outcome:'rejected',code:'LIVE_NOT_ALLOWED'};
+    if(!this.config.smsEnabled||!this.config.liveApproved||(!this.config.liveAllowAnyRecipient&&!this.config.liveRecipients.includes(request.to)))return {outcome:'rejected',code:'LIVE_NOT_ALLOWED'};
     const ttl=Math.floor(((request.expiresAt?.getTime()??Date.now()+60000)-Date.now())/1000);
     if(ttl<=0)return {outcome:'rejected',code:'EXPIRED'};
     try{
