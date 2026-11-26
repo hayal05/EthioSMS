@@ -239,137 +239,215 @@ export function Operations({ refreshToken = 0 }: { refreshToken?: number }) {
     }
   }
   return (
-    <section className="accounts">
-      <h2>Operations</h2>
+    <section className="operations">
+      <div className="operations-intro">
+        <div>
+          <span className="eyebrow">SYSTEM ADMINISTRATION</span>
+          <h2>Operations</h2>
+          <p>Monitor gateway configuration, dispatch activity and message failures.</p>
+        </div>
+        {data && (
+          <span className="operations-updated">
+            <Icon name="clock" size={14} /> Times shown in Addis Ababa
+          </span>
+        )}
+      </div>
       {data ? (
         <>
-          <section className="panel" aria-labelledby="android-gateway-heading">
+          <section className="operations-summary" aria-label="Dispatch summary">
+            <article>
+              <span>Transport mode</span>
+              <strong>{data.mode === "live" ? "Live SMS" : "Test mode"}</strong>
+              <small>{data.mode === "live" ? "Live transport selected" : "Messages use mock transport"}</small>
+            </article>
+            <article>
+              <span>Dispatch</span>
+              <strong className={data.paused ? "operations-value-muted" : "operations-value-good"}>
+                {data.paused ? "Paused" : "Running"}
+              </strong>
+              <small>{data.paused ? "Pending work is not being dispatched" : "Queue processing is enabled"}</small>
+            </article>
+            <article>
+              <span>Reserved segments</span>
+              <strong>{data.usage.reserved_segments.toLocaleString()}</strong>
+              <small>Currently reserved</small>
+            </article>
+            <article>
+              <span>Used segments</span>
+              <strong>{data.usage.used_segments.toLocaleString()}</strong>
+              <small>Recorded usage</small>
+            </article>
+          </section>
+
+          <section className="panel operations-gateway" aria-labelledby="android-gateway-heading">
             <div className="panel-heading">
               <div>
-                <h2 id="android-gateway-heading">Android SMS Gateway</h2>
-                <p>Device configuration and transport connectivity</p>
+                <h2 id="android-gateway-heading">Android SMS gateway</h2>
+                <p>Gateway configuration and latest API contact</p>
               </div>
               <span className={"state " + (data.mode === "live" ? "accepted" : "unknown")}>
                 {data.mode === "live" ? "Live gateway" : "Mock gateway"}
               </span>
             </div>
-            <div className="status">
-              <span>Device connection: <strong>Not verified</strong></span>
-              <span>
-                Last successful API contact:{" "}
+
+            <div className="operations-connection">
+              <div>
+                <span>Device connection</span>
+                <strong className="operations-value-muted">Not verified</strong>
+                <small>No device heartbeat is available</small>
+              </div>
+              <div>
+                <span>Last successful API contact</span>
                 <strong>{data.lastApiContact ? when(data.lastApiContact) : "Never recorded"}</strong>
-              </span>
+                <small>Most recent successful gateway API request</small>
+              </div>
             </div>
-            <p className="form-hint">
-              API contact confirms that EthioSMS reached the SMS Gateway API during a
-              message operation. It does not prove that the Android app is currently
-              online, that the phone has network service, or that the selected SIM can
-              send SMS. The gateway does not currently provide a device heartbeat here.
+
+            <p className="operations-explanation">
+              An API contact confirms that EthioSMS reached the gateway API during a message
+              operation. It does not confirm that the Android app is online, the phone has
+              network service, or the selected SIM can send SMS.
             </p>
-            <div className="metrics queue-metrics">
-              <article className="metric">
-                <div>Device ID</div>
+
+            <div className="operations-config-grid">
+              <article>
+                <span>Device ID</span>
                 <strong className="gateway-device-id">{data.gateway?.deviceId ?? "Not configured"}</strong>
                 <small>{data.gateway?.configured ? "Configured in service environment" : "Live device configuration unavailable"}</small>
               </article>
-              <article className="metric">
-                <div>Selected SIM</div>
+              <article>
+                <span>Selected SIM</span>
                 <strong>{data.gateway?.sim ?? "—"}</strong>
                 <small>Configured SIM slot</small>
               </article>
-              <article className="metric">
-                <div>SMS sending</div>
+              <article>
+                <span>SMS sending</span>
                 <strong>{data.gateway?.smsEnabled ? "Enabled" : "Disabled"}</strong>
                 <small>Service environment flag</small>
               </article>
-              <article className="metric">
-                <div>Live approval</div>
+              <article>
+                <span>Live approval</span>
                 <strong>{data.gateway?.liveApproved ? "Approved" : "Not approved"}</strong>
                 <small>{data.gateway?.allowlistCount ?? 0} pilot recipient(s) allowlisted</small>
               </article>
             </div>
-            <p className="form-hint">
-              Latest failed or uncertain message:{" "}
-              <strong>{data.failures?.[0]?.last_error_code ?? "No recent failed or uncertain recipient"}</strong>
-              {data.failures?.[0] ? ` · ${data.failures[0].status} · ${data.failures[0].application}` : ""}
-            </p>
           </section>
-          <div className="status">
-            <span>
-              {data.mode === "mock" ? "Mock transport" : "Live transport"} ·{" "}
-              {data.paused ? "Paused" : "Running"}
-            </span>
-            <span>
-              Reserved: {data.usage.reserved_segments} · Used:{" "}
-              {data.usage.used_segments}
-            </span>
-          </div>
-          <div className="actions">
-            <button
-              disabled={busy}
-              onClick={() =>
-                void action("/admin/dispatch", { paused: !data.paused })
-              }
-            >
-              {data.paused ? "Resume dispatch" : "Pause dispatch"}
-            </button>
-            <button
-              className="secondary"
-              disabled={busy}
-              onClick={() => void action("/admin/dispatch/drain")}
-            >
-              Process pending work
-            </button>
-            <button
-              className="secondary"
-              disabled={busy}
-              onClick={() => {
-                setBusy(true);
-                void load()
-                  .catch((error) => setNotice(error.message))
-                  .finally(() => setBusy(false));
-              }}
-            >
-              Check queue
-            </button>
-            <button
-              className="secondary"
-              disabled={busy}
-              onClick={() => void action("/admin/maintenance")}
-            >
-              Run retention maintenance
-            </button>
-          </div>
-          <div className="metrics queue-metrics">
-            {data.counts.length ? (
-              data.counts.map((item: any) => (
-                <article className="metric" key={item.status}>
-                  <div>{item.status}</div>
-                  <strong>{item.count}</strong>
-                  <small>Recipients in this state</small>
-                </article>
-              ))
+
+          <section className="operations-section" aria-labelledby="dispatch-controls-heading">
+            <div className="operations-section-heading">
+              <div>
+                <h2 id="dispatch-controls-heading">Dispatch controls</h2>
+                <p>Administrative actions for the existing message queue</p>
+              </div>
+              <span className={data.paused ? "operations-control-state is-paused" : "operations-control-state"}>
+                {data.paused ? "Dispatch paused" : "Dispatch running"}
+              </span>
+            </div>
+            <div className="operations-actions">
+              <button
+                disabled={busy}
+                className={data.paused ? "" : "secondary"}
+                onClick={() => void action("/admin/dispatch", { paused: !data.paused })}
+              >
+                {data.paused ? "Resume dispatch" : "Pause dispatch"}
+              </button>
+              <button className="secondary" disabled={busy} onClick={() => void action("/admin/dispatch/drain")}>
+                Process pending work
+              </button>
+              <button
+                className="secondary"
+                disabled={busy}
+                onClick={() => {
+                  setBusy(true);
+                  void load()
+                    .then(() => setNotice(""))
+                    .catch((error) => setNotice(error.message))
+                    .finally(() => setBusy(false));
+                }}
+              >
+                <Icon name="refresh" size={14} /> Check queue
+              </button>
+              <button className="secondary" disabled={busy} onClick={() => void action("/admin/maintenance")}>
+                Run retention maintenance
+              </button>
+            </div>
+          </section>
+
+          <section className="operations-section" aria-labelledby="queue-activity-heading">
+            <div className="operations-section-heading">
+              <div>
+                <h2 id="queue-activity-heading">Queue activity</h2>
+                <p>Recipient counts grouped by their current delivery state</p>
+              </div>
+            </div>
+            <div className="operations-queue-grid">
+              {data.counts.length ? (
+                data.counts.map((item: any) => (
+                  <article className="operations-queue-item" key={item.status}>
+                    <span>{item.status}</span>
+                    <strong>{item.count.toLocaleString()}</strong>
+                    <small>Recipients</small>
+                  </article>
+                ))
+              ) : (
+                <div className="operations-queue-empty">
+                  <Icon name="check" size={17} />
+                  <span>No recipients in the queue</span>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="operations-section" aria-labelledby="recent-failures-heading">
+            <div className="operations-section-heading">
+              <div>
+                <h2 id="recent-failures-heading">Recent failures</h2>
+                <p>Latest failed or uncertain message recipients</p>
+              </div>
+              <span className="operations-failure-count">{data.failures.length} recorded</span>
+            </div>
+            {data.failures.length ? (
+              <ul className="operations-failure-list">
+                {data.failures.map((item: any) => (
+                  <li key={item.id}>
+                    <div className="operations-failure-main">
+                      <strong>{item.application}</strong>
+                      <small>{item.mode} transport</small>
+                    </div>
+                    <span className={"state " + (item.status === "failed" ? "failed" : "unknown")}>
+                      {item.status}
+                    </span>
+                    <code>{item.last_error_code ?? "No error code"}</code>
+                  </li>
+                ))}
+              </ul>
             ) : (
-              <p>No recipients in the queue.</p>
+              <div className="operations-no-failures">
+                <Icon name="check" size={17} />
+                <span>No recent failures recorded</span>
+              </div>
             )}
-          </div>
-          <h3>Recent failures</h3>
-          {!data.failures.length && (
-            <p className="form-hint">No recent failures recorded.</p>
-          )}
-          <ul className="user-list">
-            {data.failures.map((item: any) => (
-              <li key={item.id}>
-                {item.application} · {item.mode} · {item.status} ·{" "}
-                {item.last_error_code ?? "No error code"}
-              </li>
-            ))}
-          </ul>
+          </section>
         </>
       ) : (
-        <p>Loading operations…</p>
+        <div className="operations-loading" role="status">
+          <Icon name={notice ? "alert" : "activity"} size={20} />
+          <div>
+            <strong>{notice ? "Operations data unavailable" : "Loading operations…"}</strong>
+            <p>{notice || "Retrieving the latest gateway and queue information."}</p>
+          </div>
+          {notice && (
+            <button className="secondary" disabled={busy} onClick={() => {
+              setBusy(true);
+              setNotice("");
+              void load().catch((error) => setNotice(error.message)).finally(() => setBusy(false));
+            }}>
+              Try again
+            </button>
+          )}
+        </div>
       )}
-      <p role="status">{notice}</p>
+      {notice && data && <p className="operations-feedback" role="status">{notice}</p>}
     </section>
   );
 }
